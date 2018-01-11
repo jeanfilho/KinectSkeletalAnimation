@@ -49,6 +49,10 @@ public class Skeleton
             //Sum over all bone influences
             foreach (var boneWeight in _vertexIdBoneWeightDictionary[i])
             {
+                //Value too small to be considered - skip this bone
+                if(Math.Abs(boneWeight.Value) < 0.000001f)
+                    continue;
+
                 var currentBone = _boneIdBoneDictionary[boneWeight.Key];
                 var basePoseMatrix = currentBone.GetLocalBasePoseTransformation();
                 var currentPoseMatrix = currentBone.GetWorldCurrentPoseTransformation();
@@ -67,7 +71,7 @@ public class Skeleton
 
 public abstract class BaseBone
 {
-    public Vector3 Position; //Bone (link) position without any rotation applied to it in local space
+    public Vector3 LocalPosition; //Bone (link) position without any rotation applied to it in local space
     public Quaternion Rotation;
     public BaseBone Previous;
 
@@ -79,14 +83,12 @@ public class RootBone : BaseBone
 {
     public override Matrix4x4 GetLocalBasePoseTransformation()
     {
-        //TODO - testing
         return Matrix4x4.TRS(Vector3.zero, Rotation, Vector3.one).inverse;
     }
 
     public override Matrix4x4 GetWorldCurrentPoseTransformation()
     {
-        //TODO - testing
-        return Matrix4x4.TRS(Position, Rotation, Vector3.one);
+        return Matrix4x4.TRS(LocalPosition, Rotation, Vector3.one);
     }
 }
 
@@ -94,13 +96,11 @@ public class Bone : BaseBone
 {
     public override Matrix4x4 GetLocalBasePoseTransformation()
     {
-        //TODO - testing
-        return Matrix4x4.TRS(Position, Rotation, Vector3.one).inverse * Previous.GetLocalBasePoseTransformation() ;
+        return Matrix4x4.TRS(LocalPosition, Rotation, Vector3.one).inverse * Previous.GetLocalBasePoseTransformation();
     }
 
     public override Matrix4x4 GetWorldCurrentPoseTransformation()
     {
-        //TODO - testing
-        return Previous.GetWorldCurrentPoseTransformation() * Matrix4x4.TRS(Position, Rotation, Vector3.one);
+        return Previous.GetWorldCurrentPoseTransformation() * Matrix4x4.TRS(LocalPosition, Rotation, Vector3.one);
     }
 }
