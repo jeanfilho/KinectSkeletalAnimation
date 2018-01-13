@@ -28,16 +28,28 @@ public class AnimationController : MonoBehaviour
         var nameBoneDictionary = new Dictionary<string, BaseBone>();
         var vertexIdBoneWeightDictionary = new Dictionary<int, Dictionary<string, float>>();
 
-        //TODO: load vertices
+        //TODO: load vertices - expample
+        basePoseVertices = ModelMesh.vertices;
 
         //TODO: load bones - this is just as an example
-        for(int i = 0; i < 0; i++)
+        //bones could for example be pulled from a SkinnedMeshRenderer
+        for (int i = 0; i < 0; i++)
         { 
             nameBoneDictionary.Add("root", new RootBone(Vector3.zero, Quaternion.identity));
         }
-
         //TODO: map vertices to bone id and weight - this is just an example
-        for(int i = 0; i < 0; i++)
+        //Unity BoneWeight class can assign up to four bones to each vertex, acessable via bone inicies
+        for (int i = 0; i < 0; i++)
+        {
+            Dictionary<string, float> dic = new Dictionary<string, float>();
+            dic.Add(ModelMesh.boneWeights[i].boneIndex0 + "", ModelMesh.boneWeights[i].weight0);
+            dic.Add(ModelMesh.boneWeights[i].boneIndex1 + "", ModelMesh.boneWeights[i].weight1);
+            dic.Add(ModelMesh.boneWeights[i].boneIndex2 + "", ModelMesh.boneWeights[i].weight2);
+            dic.Add(ModelMesh.boneWeights[i].boneIndex3 + "", ModelMesh.boneWeights[i].weight3);
+            vertexIdBoneWeightDictionary.Add(i, dic);
+        }
+        /*
+        for (int i = 0; i < 0; i++)
         {
             var boneWeightDictionary = new Dictionary<string, float>();
 
@@ -49,6 +61,7 @@ public class AnimationController : MonoBehaviour
             }
             vertexIdBoneWeightDictionary.Add(0, boneWeightDictionary);
         }
+        */
 
         //Create a skeleton
         Skeleton = new Skeleton(nameBoneDictionary, vertexIdBoneWeightDictionary, basePoseVertices);

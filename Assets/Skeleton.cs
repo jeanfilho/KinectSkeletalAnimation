@@ -60,6 +60,7 @@ public class Skeleton
                 var basePoseMatrix = currentBone.GetLocalBasePoseTransformation();
                 var currentPoseMatrix = currentBone.GetWorldCurrentPoseTransformation();
                 newPosition += currentPoseMatrix * basePoseMatrix * new Vector4(BasePoseVertices[i].x, BasePoseVertices[i].y, BasePoseVertices[i].z, 1);
+                //Shouldn't this be multiplied one line above? Otherwise we weight the entire transformation with the boneweight
                 newPosition *= boneWeight.Value;
             }
             //Normalize bone influences
