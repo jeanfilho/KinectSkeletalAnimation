@@ -9,7 +9,7 @@ public class Skeleton
     public readonly Dictionary<int, Dictionary<string, float>> VertexIdBoneWeightDictionary;
 
     public readonly Vector3[] BasePoseVertices;
-
+    
     //Root bone should have ID == "root"
     public Skeleton(Dictionary<string, BaseBone> boneIdBoneDictionary, Dictionary<int, Dictionary<string, float>> vertexIdBoneWeightDictionary, Vector3[] basePoseVertices)
     {
@@ -59,9 +59,11 @@ public class Skeleton
                 var currentBone = BoneIdBoneDictionary[boneWeight.Key];
                 var basePoseMatrix = currentBone.GetLocalBasePoseTransformation();
                 var currentPoseMatrix = currentBone.GetWorldCurrentPoseTransformation();
-                newPosition += currentPoseMatrix * basePoseMatrix * new Vector4(BasePoseVertices[i].x, BasePoseVertices[i].y, BasePoseVertices[i].z, 1);
-                //Shouldn't this be multiplied one line above? Otherwise we weight the entire transformation with the boneweight
-                newPosition *= boneWeight.Value;
+
+                var currentPosition = currentPoseMatrix * basePoseMatrix * new Vector4(BasePoseVertices[i].x, BasePoseVertices[i].y, BasePoseVertices[i].z, 1);
+                currentPosition *= boneWeight.Value;
+
+                newPosition += currentPosition;
             }
             //Normalize bone influences
             newPosition /= numberOfBones;
@@ -75,8 +77,8 @@ public class Skeleton
 
 public abstract class BaseBone
 {
-    public Vector3 LocalPosition; //Bone (link) position without any rotation applied to it in local space
-    public Quaternion Rotation;
+    protected Vector3 LocalPosition; //Bone (link) position without any rotation applied to it in local space
+    protected Quaternion Rotation;
 
     protected BaseBone(Vector3 localPosition, Quaternion rotation)
     {
@@ -106,7 +108,7 @@ public class RootBone : BaseBone
 
 public class Bone : BaseBone
 {
-    public BaseBone Previous;
+    public readonly BaseBone Previous;
 
     public Bone(Vector3 localPosition, Quaternion rotation, BaseBone previous) : base(localPosition, rotation)
     {
