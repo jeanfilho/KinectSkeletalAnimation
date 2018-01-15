@@ -77,18 +77,13 @@ public class AnimationController : MonoBehaviour
     private void UpdateBones()
     {
         //TODO - do actual implementation, this is just a test
-        Skeleton.BoneIdBoneDictionary["Upper arm.R"].LocalRotation = Quaternion.Euler(0, 10 * Time.timeSinceLevelLoad, 0);
+        Skeleton.BoneIdBoneDictionary["root"].LocalRotation *= Quaternion.Euler(100, 45, 50);
     }
 
     //Apply the bone transformations to the mesh
     private void UpdateMesh()
     {
-        AnimatedMesh.mesh.GetVertices(_vertices);
-        Skeleton.UpdatePose(_vertices);
-        Debug.Log(_vertices[0].x);
-        Debug.Log(_vertices[0].y);
-        Debug.Log(_vertices[0].z);
-        AnimatedMesh.mesh.vertices = _vertices.ToArray();
+        AnimatedMesh.mesh.vertices = Skeleton.UpdatePose(AnimatedMesh.mesh.vertices);
         AnimatedMesh.mesh.RecalculateBounds();
     }
 }

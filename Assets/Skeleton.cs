@@ -36,10 +36,10 @@ public class Skeleton
 
 
     //Transform mesh vertices accourding to the transformation of each bone
-    public void UpdatePose(List<Vector3> currentMesh)
+    public Vector3[] UpdatePose(Vector3[] currentMesh)
     {
         //Get the current pose position for every vertex
-        for (int i = 0; i < BasePoseVertices.Length; i++)
+        for (int i = 0; i < currentMesh.Length; i++)
         {
             var finalPosition = Vector4.zero;
 
@@ -58,10 +58,14 @@ public class Skeleton
                 updatedPosition *= boneWeight.Value;
 
                 finalPosition += updatedPosition;
+                if(boneWeight.Key == "root")
+                    Debug.Log(currentPosition.x + " " + currentPosition.y + " " + currentPosition.z + " " +  " || " + finalPosition.x + " " + finalPosition.y + " " + finalPosition.z);
             }
             //Normalize bone influences
             currentMesh[i] = finalPosition;
         }
+
+        return currentMesh;
     }
 }
 
@@ -71,10 +75,16 @@ public abstract class BaseBone
     public Vector3 LocalPosition; //Bone (link) position without any rotation applied to it in local space
     public Quaternion LocalRotation;
 
+    protected readonly Vector3 BaseLocalPosition;
+    protected readonly Quaternion BaseLocalRotation;
+
     protected BaseBone(Vector3 localPosition, Quaternion localRotation)
     {
         LocalPosition = localPosition;
+        BaseLocalPosition = localPosition;
+
         LocalRotation = localRotation;
+        BaseLocalRotation = localRotation;
     }
 
 
@@ -111,7 +121,7 @@ public class Bone : BaseBone
         BaseBone previousBone;
        if(!skeleton.BoneIdBoneDictionary.TryGetValue(PreviousBoneId, out previousBone))
             Debug.LogException(new Exception("Bone not found: " + PreviousBoneId));
-        return Matrix4x4.TRS(LocalPosition, LocalRotation, Vector3.one).inverse * previousBone.GetLocalBasePoseTransformation(skeleton);
+        return Matrix4x4.TRS(BaseLocalPosition, BaseLocalRotation, Vector3.one).inverse * previousBone.GetLocalBasePoseTransformation(skeleton);
     }
 
     public override Matrix4x4 GetWorldCurrentPoseTransformation(Skeleton skeleton)
