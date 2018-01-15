@@ -8,8 +8,10 @@ public class AnimationController : MonoBehaviour
 {
     public KinectSensor Sensor;
     public Skeleton Skeleton;
-    public SkinnedMeshRenderer BaseMesh;
+    public SkinnedMeshRenderer ReferenceMesh;
     public MeshFilter AnimatedMesh;
+
+    private List<Vector3> _vertices;
 
     void Awake()
     {
@@ -26,34 +28,36 @@ public class AnimationController : MonoBehaviour
     //Load model from unity, map model bones to our bone structure and create a skeleton
     private void LoadModel()
     {
-        AnimatedMesh.mesh = BaseMesh.sharedMesh.CloneMesh();
-        AnimatedMesh.GetComponent<Renderer>().materials = BaseMesh.GetComponent<Renderer>().materials;
+        //Clone the referenced mesh
+        AnimatedMesh.mesh = ReferenceMesh.sharedMesh.CloneMesh();
+        AnimatedMesh.GetComponent<Renderer>().materials = ReferenceMesh.GetComponent<Renderer>().materials;
+        _vertices = new List<Vector3>(AnimatedMesh.mesh.vertices.Length);
 
-        var basePoseVertices = new Vector3[BaseMesh.sharedMesh.vertices.Length];
+        var basePoseVertices = new Vector3[ReferenceMesh.sharedMesh.vertices.Length];
         var nameBoneDictionary = new Dictionary<string, BaseBone>();
         var vertexIdBoneWeightDictionary = new Dictionary<int, Dictionary<string, float>>();
         
-        //Load vertices
-        Array.Copy(BaseMesh.sharedMesh.vertices, basePoseVertices, basePoseVertices.Length);
+        //Load vertices for basePose
+        Array.Copy(ReferenceMesh.sharedMesh.vertices, basePoseVertices, basePoseVertices.Length);
 
         //bones could for example be pulled from a SkinnedMeshRenderer
-        BaseMesh.rootBone.name = "root";
-        nameBoneDictionary.Add(BaseMesh.rootBone.name, new RootBone(BaseMesh.rootBone.localPosition, BaseMesh.rootBone.localRotation));
-        foreach (var bone in BaseMesh.bones)
+        ReferenceMesh.rootBone.name = "root";
+        nameBoneDictionary.Add(ReferenceMesh.rootBone.name, new RootBone(ReferenceMesh.rootBone.localPosition, ReferenceMesh.rootBone.localRotation));
+        foreach (var bone in ReferenceMesh.bones)
         {
-            if (BaseMesh.rootBone == bone) continue;
+            if (ReferenceMesh.rootBone == bone) continue;
             nameBoneDictionary.Add(bone.name, new Bone(bone.localPosition, bone.localRotation, bone.parent.name));
         }
         
         //Unity BoneWeight class can assign up to four bones to each vertex, acessable via bone inicies
-        var boneWeights = BaseMesh.sharedMesh.boneWeights;
+        var boneWeights = ReferenceMesh.sharedMesh.boneWeights;
         for (var i = 0; i < basePoseVertices.Length; i++)
         {
             Dictionary<string, float> dic = new Dictionary<string, float>();
-            var name0 = BaseMesh.bones[boneWeights[i].boneIndex0].name;
-            var name1 = BaseMesh.bones[boneWeights[i].boneIndex1].name;
-            var name2 = BaseMesh.bones[boneWeights[i].boneIndex2].name;
-            var name3 = BaseMesh.bones[boneWeights[i].boneIndex3].name;
+            var name0 = ReferenceMesh.bones[boneWeights[i].boneIndex0].name;
+            var name1 = ReferenceMesh.bones[boneWeights[i].boneIndex1].name;
+            var name2 = ReferenceMesh.bones[boneWeights[i].boneIndex2].name;
+            var name3 = ReferenceMesh.bones[boneWeights[i].boneIndex3].name;
 
             dic.Add(name0, boneWeights[i].weight0);
             if (!dic.ContainsKey(name1))
@@ -79,11 +83,12 @@ public class AnimationController : MonoBehaviour
     //Apply the bone transformations to the mesh
     private void UpdateMesh()
     {
-        Vector3[] vertices = new Vector3[AnimatedMesh.mesh.vertices.Length];
-        for (int i = 0; i < vertices.Length; i++)
-            vertices[i] = AnimatedMesh.mesh.vertices[i];
-
-        AnimatedMesh.mesh.vertices = Skeleton.UpdatePose(vertices);
-        AnimatedMesh.mesh.UploadMeshData(false);
+        AnimatedMesh.mesh.GetVertices(_vertices);
+        Skeleton.UpdatePose(_vertices);
+        Debug.Log(_vertices[0].x);
+        Debug.Log(_vertices[0].y);
+        Debug.Log(_vertices[0].z);
+        AnimatedMesh.mesh.vertices = _vertices.ToArray();
+        AnimatedMesh.mesh.RecalculateBounds();
     }
 }

@@ -36,7 +36,7 @@ public class Skeleton
 
 
     //Transform mesh vertices accourding to the transformation of each bone
-    public Vector3[] UpdatePose(Vector3[] currentMesh)
+    public void UpdatePose(List<Vector3> currentMesh)
     {
         //Get the current pose position for every vertex
         for (int i = 0; i < BasePoseVertices.Length; i++)
@@ -62,8 +62,6 @@ public class Skeleton
             //Normalize bone influences
             currentMesh[i] = finalPosition;
         }
-
-        return currentMesh;
     }
 }
 

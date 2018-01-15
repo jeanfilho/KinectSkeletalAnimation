@@ -244,7 +244,7 @@ Transform:
   m_GameObject: {fileID: 100300953}
   m_LocalRotation: {x: -0, y: -0.7071068, z: -0.7071068, w: 0}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 100, y: 100, z: 100}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 3
@@ -300,6 +300,50 @@ Prefab:
       propertyPath: m_UpdateWhenOffscreen
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 400002, guid: adfa0f57a56efa946ae238b874f32c06, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 400002, guid: adfa0f57a56efa946ae238b874f32c06, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 400002, guid: adfa0f57a56efa946ae238b874f32c06, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: adfa0f57a56efa946ae238b874f32c06, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: adfa0f57a56efa946ae238b874f32c06, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: adfa0f57a56efa946ae238b874f32c06, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 400002, guid: adfa0f57a56efa946ae238b874f32c06, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400002, guid: adfa0f57a56efa946ae238b874f32c06, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400002, guid: adfa0f57a56efa946ae238b874f32c06, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: adfa0f57a56efa946ae238b874f32c06, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 400000, guid: adfa0f57a56efa946ae238b874f32c06, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: adfa0f57a56efa946ae238b874f32c06, type: 3}
   m_IsPrefabParent: 0
@@ -335,7 +379,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 855e766ebd15db64e85e0d64f264de59, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  BaseMesh: {fileID: 1521863528}
+  ReferenceMesh: {fileID: 1521863528}
   AnimatedMesh: {fileID: 100300954}
 --- !u!4 &1582213414
 Transform:
