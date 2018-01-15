@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using Windows.Kinect;
 using UnityEngine;
@@ -7,12 +8,13 @@ public class AnimationController : MonoBehaviour
 {
     public KinectSensor Sensor;
     public Skeleton Skeleton;
-    public Mesh ModelMesh;
+    public SkinnedMeshRenderer BaseMesh;
+    public MeshFilter AnimatedMesh;
 
     void Awake()
     {
         Sensor = KinectSensor.GetDefault();
-        LoadModel("DO YU KNO DA WAE!?");
+        LoadModel();
     }
 
     void Update()
@@ -21,47 +23,47 @@ public class AnimationController : MonoBehaviour
         UpdateMesh();
     }
 
-    //Load model from the hard drive, map model bones to our bone structure and create a skeleton
-    private void LoadModel(string path)
+    //Load model from unity, map model bones to our bone structure and create a skeleton
+    private void LoadModel()
     {
-        var basePoseVertices = new Vector3[0];
+        AnimatedMesh.mesh = BaseMesh.sharedMesh.CloneMesh();
+        AnimatedMesh.GetComponent<Renderer>().materials = BaseMesh.GetComponent<Renderer>().materials;
+
+        var basePoseVertices = new Vector3[BaseMesh.sharedMesh.vertices.Length];
         var nameBoneDictionary = new Dictionary<string, BaseBone>();
         var vertexIdBoneWeightDictionary = new Dictionary<int, Dictionary<string, float>>();
+        
+        //Load vertices
+        Array.Copy(BaseMesh.sharedMesh.vertices, basePoseVertices, basePoseVertices.Length);
 
-        //TODO: load vertices - expample
-        basePoseVertices = ModelMesh.vertices;
-
-        //TODO: load bones - this is just as an example
         //bones could for example be pulled from a SkinnedMeshRenderer
-        for (int i = 0; i < 0; i++)
-        { 
-            nameBoneDictionary.Add("root", new RootBone(Vector3.zero, Quaternion.identity));
+        BaseMesh.rootBone.name = "root";
+        nameBoneDictionary.Add(BaseMesh.rootBone.name, new RootBone(BaseMesh.rootBone.localPosition, BaseMesh.rootBone.localRotation));
+        foreach (var bone in BaseMesh.bones)
+        {
+            if (BaseMesh.rootBone == bone) continue;
+            nameBoneDictionary.Add(bone.name, new Bone(bone.localPosition, bone.localRotation, bone.parent.name));
         }
-        //TODO: map vertices to bone id and weight - this is just an example
+        
         //Unity BoneWeight class can assign up to four bones to each vertex, acessable via bone inicies
-        for (int i = 0; i < 0; i++)
+        var boneWeights = BaseMesh.sharedMesh.boneWeights;
+        for (var i = 0; i < basePoseVertices.Length; i++)
         {
             Dictionary<string, float> dic = new Dictionary<string, float>();
-            dic.Add(ModelMesh.boneWeights[i].boneIndex0 + "", ModelMesh.boneWeights[i].weight0);
-            dic.Add(ModelMesh.boneWeights[i].boneIndex1 + "", ModelMesh.boneWeights[i].weight1);
-            dic.Add(ModelMesh.boneWeights[i].boneIndex2 + "", ModelMesh.boneWeights[i].weight2);
-            dic.Add(ModelMesh.boneWeights[i].boneIndex3 + "", ModelMesh.boneWeights[i].weight3);
+            var name0 = BaseMesh.bones[boneWeights[i].boneIndex0].name;
+            var name1 = BaseMesh.bones[boneWeights[i].boneIndex1].name;
+            var name2 = BaseMesh.bones[boneWeights[i].boneIndex2].name;
+            var name3 = BaseMesh.bones[boneWeights[i].boneIndex3].name;
+
+            dic.Add(name0, boneWeights[i].weight0);
+            if (!dic.ContainsKey(name1))
+                dic.Add(name1, boneWeights[i].weight1);
+            if (!dic.ContainsKey(name2))
+                dic.Add(name2, boneWeights[i].weight2);
+            if (!dic.ContainsKey(name3))
+                dic.Add(name3, boneWeights[i].weight3);
             vertexIdBoneWeightDictionary.Add(i, dic);
         }
-        /*
-        for (int i = 0; i < 0; i++)
-        {
-            var boneWeightDictionary = new Dictionary<string, float>();
-
-            //TODO: Map bone id to weights
-            for(int j = 0; j < 0; j++)
-            {
-                var boneId = "root";
-                boneWeightDictionary.Add(boneId, 1);
-            }
-            vertexIdBoneWeightDictionary.Add(0, boneWeightDictionary);
-        }
-        */
 
         //Create a skeleton
         Skeleton = new Skeleton(nameBoneDictionary, vertexIdBoneWeightDictionary, basePoseVertices);
@@ -70,13 +72,18 @@ public class AnimationController : MonoBehaviour
     //Update skeleton using kinect sensor data
     private void UpdateBones()
     {
-        //TODO
+        //TODO - do actual implementation, this is just a test
+        Skeleton.BoneIdBoneDictionary["Upper arm.R"].LocalRotation = Quaternion.Euler(0, 10 * Time.timeSinceLevelLoad, 0);
     }
 
     //Apply the bone transformations to the mesh
     private void UpdateMesh()
     {
-        //TODO
-        ModelMesh.vertices = Skeleton.GetCurrentPose();
+        Vector3[] vertices = new Vector3[AnimatedMesh.mesh.vertices.Length];
+        for (int i = 0; i < vertices.Length; i++)
+            vertices[i] = AnimatedMesh.mesh.vertices[i];
+
+        AnimatedMesh.mesh.vertices = Skeleton.UpdatePose(vertices);
+        AnimatedMesh.mesh.UploadMeshData(false);
     }
 }

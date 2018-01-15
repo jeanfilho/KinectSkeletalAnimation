@@ -24,7 +24,7 @@ public class Skeleton
         }
 
         //Check for root bone
-        if(!BoneIdBoneDictionary.ContainsKey("root"))
+        if(!boneIdBoneDictionary.ContainsKey("root"))
             Debug.LogException(new Exception("No \"root\" bone found in dictionary - Mark the root bone with the id \"root\""));
 
 
@@ -34,20 +34,14 @@ public class Skeleton
         BasePoseVertices = basePoseVertices;
     }
 
+
     //Transform mesh vertices accourding to the transformation of each bone
-    public Vector3[] GetCurrentPose()
+    public Vector3[] UpdatePose(Vector3[] currentMesh)
     {
-        //Deep clone vertices to keep basePoseVertices intact
-        var result = new Vector3[BasePoseVertices.Length];
-        Array.Copy(BasePoseVertices, result, BasePoseVertices.Length);
-
-        //Number of bones - required to normalize the weights so that the sum over all weights = 1
-        float numberOfBones = BoneIdBoneDictionary.Count;
-
         //Get the current pose position for every vertex
         for (int i = 0; i < BasePoseVertices.Length; i++)
         {
-            var newPosition = Vector4.zero;
+            var finalPosition = Vector4.zero;
 
             //Sum over all bone influences
             foreach (var boneWeight in VertexIdBoneWeightDictionary[i])
@@ -57,71 +51,76 @@ public class Skeleton
                     continue;
 
                 var currentBone = BoneIdBoneDictionary[boneWeight.Key];
-                var basePoseMatrix = currentBone.GetLocalBasePoseTransformation();
-                var currentPoseMatrix = currentBone.GetWorldCurrentPoseTransformation();
+                var basePoseMatrix = currentBone.GetLocalBasePoseTransformation(this);
+                var currentPoseMatrix = currentBone.GetWorldCurrentPoseTransformation(this);
+                var currentPosition = new Vector4(BasePoseVertices[i].x, BasePoseVertices[i].y, BasePoseVertices[i].z, 1);
+                var updatedPosition = currentPoseMatrix * basePoseMatrix * currentPosition;
+                updatedPosition *= boneWeight.Value;
 
-                var currentPosition = currentPoseMatrix * basePoseMatrix * new Vector4(BasePoseVertices[i].x, BasePoseVertices[i].y, BasePoseVertices[i].z, 1);
-                currentPosition *= boneWeight.Value;
-
-                newPosition += currentPosition;
+                finalPosition += updatedPosition;
             }
             //Normalize bone influences
-            newPosition /= numberOfBones;
-            result[i] = newPosition;
+            currentMesh[i] = finalPosition;
         }
 
-        return result;
+        return currentMesh;
     }
 }
 
 
 public abstract class BaseBone
 {
-    protected Vector3 LocalPosition; //Bone (link) position without any rotation applied to it in local space
-    protected Quaternion Rotation;
+    public Vector3 LocalPosition; //Bone (link) position without any rotation applied to it in local space
+    public Quaternion LocalRotation;
 
-    protected BaseBone(Vector3 localPosition, Quaternion rotation)
+    protected BaseBone(Vector3 localPosition, Quaternion localRotation)
     {
         LocalPosition = localPosition;
-        Rotation = rotation;
+        LocalRotation = localRotation;
     }
 
 
-    public abstract Matrix4x4 GetLocalBasePoseTransformation();
-    public abstract Matrix4x4 GetWorldCurrentPoseTransformation();
+    public abstract Matrix4x4 GetLocalBasePoseTransformation(Skeleton skeleton);
+    public abstract Matrix4x4 GetWorldCurrentPoseTransformation(Skeleton skeleton);
 }
 
 public class RootBone : BaseBone
 {
-    public RootBone(Vector3 localPosition, Quaternion rotation) : base(localPosition, rotation) { }
+    public RootBone(Vector3 localPosition, Quaternion localRotation) : base(localPosition, localRotation) { }
 
-    public override Matrix4x4 GetLocalBasePoseTransformation()
+    public override Matrix4x4 GetLocalBasePoseTransformation(Skeleton skeleton)
     {
-        return Matrix4x4.TRS(Vector3.zero, Rotation, Vector3.one).inverse;
+        return Matrix4x4.TRS(Vector3.zero, LocalRotation, Vector3.one).inverse;
     }
 
-    public override Matrix4x4 GetWorldCurrentPoseTransformation()
+    public override Matrix4x4 GetWorldCurrentPoseTransformation(Skeleton skeleton)
     {
-        return Matrix4x4.TRS(LocalPosition, Rotation, Vector3.one);
+        return Matrix4x4.TRS(LocalPosition, LocalRotation, Vector3.one);
     }
 }
 
 public class Bone : BaseBone
 {
-    public readonly BaseBone Previous;
+    public readonly string PreviousBoneId;
 
-    public Bone(Vector3 localPosition, Quaternion rotation, BaseBone previous) : base(localPosition, rotation)
+    public Bone(Vector3 localPosition, Quaternion localRotation, string previousBoneId) : base(localPosition, localRotation)
     {
-        Previous = previous;
+        PreviousBoneId = previousBoneId;
     }
 
-    public override Matrix4x4 GetLocalBasePoseTransformation()
+    public override Matrix4x4 GetLocalBasePoseTransformation(Skeleton skeleton)
     {
-        return Matrix4x4.TRS(LocalPosition, Rotation, Vector3.one).inverse * Previous.GetLocalBasePoseTransformation();
+        BaseBone previousBone;
+       if(!skeleton.BoneIdBoneDictionary.TryGetValue(PreviousBoneId, out previousBone))
+            Debug.LogException(new Exception("Bone not found: " + PreviousBoneId));
+        return Matrix4x4.TRS(LocalPosition, LocalRotation, Vector3.one).inverse * previousBone.GetLocalBasePoseTransformation(skeleton);
     }
 
-    public override Matrix4x4 GetWorldCurrentPoseTransformation()
+    public override Matrix4x4 GetWorldCurrentPoseTransformation(Skeleton skeleton)
     {
-        return Previous.GetWorldCurrentPoseTransformation() * Matrix4x4.TRS(LocalPosition, Rotation, Vector3.one);
+        BaseBone previousBone;
+        if (!skeleton.BoneIdBoneDictionary.TryGetValue(PreviousBoneId, out previousBone))
+            Debug.LogException(new Exception("Bone not found: " + PreviousBoneId));
+        return previousBone.GetWorldCurrentPoseTransformation(skeleton) * Matrix4x4.TRS(LocalPosition, LocalRotation, Vector3.one);
     }
 }
