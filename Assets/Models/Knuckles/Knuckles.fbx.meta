@@ -1,0 +1,224 @@
+fileFormatVersion: 2
+guid: fcb4735084bc9d04b94b075756b8aca4
+timeCreated: 1516023975
+licenseType: Free
+ModelImporter:
+  serializedVersion: 22
+  fileIDToRecycleName:
+    100000: Armature
+    100002: Body
+    100004: Chest
+    100006: Foot.L
+    100008: Foot.R
+    100010: Hand.L
+    100012: Hand.R
+    100014: Head
+    100016: Hips
+    100018: //RootNode
+    100020: LeftEye
+    100022: LeftEye_end
+    100024: Lower arm.L
+    100026: Lower arm.R
+    100028: Lower leg.L
+    100030: Lower leg.R
+    100032: Lower pinkie.L
+    100034: Lower pinkie.L_end
+    100036: Lower pinkie.R
+    100038: Lower pinkie.R_end
+    100040: Lower tail
+    100042: Lower tail_end
+    100044: Lower thumb.L
+    100046: Lower thumb.L_end
+    100048: Lower thumb.R
+    100050: Lower thumb.R_end
+    100052: Mid mid.L
+    100054: Mid mid.L_end
+    100056: Mid mid.R
+    100058: Mid mid.R_end
+    100060: Mid pointer.L
+    100062: Mid pointer.L_end
+    100064: Mid pointer.R
+    100066: Mid pointer.R_end
+    100068: Mid ring.L
+    100070: Mid ring.L_end
+    100072: Mid ring.R
+    100074: Mid ring.R_end
+    100076: Neck
+    100078: RightEye
+    100080: RightEye_end
+    100082: Shoulder.L
+    100084: Shoulder.R
+    100086: Spine
+    100088: Toe.L
+    100090: Toe.L_end
+    100092: Toe.R
+    100094: Toe.R_end
+    100096: Upper arm.L
+    100098: Upper arm.R
+    100100: Upper leg.L
+    100102: Upper leg.R
+    100104: Upper mid.L
+    100106: Upper mid.R
+    100108: Upper pinkie.L
+    100110: Upper pinkie.R
+    100112: Upper pointer.L
+    100114: Upper pointer.R
+    100116: Upper ring.L
+    100118: Upper ring.R
+    100120: Upper tail
+    100122: Upper thumb.L
+    100124: Upper thumb.R
+    400000: Armature
+    400002: Body
+    400004: Chest
+    400006: Foot.L
+    400008: Foot.R
+    400010: Hand.L
+    400012: Hand.R
+    400014: Head
+    400016: Hips
+    400018: //RootNode
+    400020: LeftEye
+    400022: LeftEye_end
+    400024: Lower arm.L
+    400026: Lower arm.R
+    400028: Lower leg.L
+    400030: Lower leg.R
+    400032: Lower pinkie.L
+    400034: Lower pinkie.L_end
+    400036: Lower pinkie.R
+    400038: Lower pinkie.R_end
+    400040: Lower tail
+    400042: Lower tail_end
+    400044: Lower thumb.L
+    400046: Lower thumb.L_end
+    400048: Lower thumb.R
+    400050: Lower thumb.R_end
+    400052: Mid mid.L
+    400054: Mid mid.L_end
+    400056: Mid mid.R
+    400058: Mid mid.R_end
+    400060: Mid pointer.L
+    400062: Mid pointer.L_end
+    400064: Mid pointer.R
+    400066: Mid pointer.R_end
+    400068: Mid ring.L
+    400070: Mid ring.L_end
+    400072: Mid ring.R
+    400074: Mid ring.R_end
+    400076: Neck
+    400078: RightEye
+    400080: RightEye_end
+    400082: Shoulder.L
+    400084: Shoulder.R
+    400086: Spine
+    400088: Toe.L
+    400090: Toe.L_end
+    400092: Toe.R
+    400094: Toe.R_end
+    400096: Upper arm.L
+    400098: Upper arm.R
+    400100: Upper leg.L
+    400102: Upper leg.R
+    400104: Upper mid.L
+    400106: Upper mid.R
+    400108: Upper pinkie.L
+    400110: Upper pinkie.R
+    400112: Upper pointer.L
+    400114: Upper pointer.R
+    400116: Upper ring.L
+    400118: Upper ring.R
+    400120: Upper tail
+    400122: Upper thumb.L
+    400124: Upper thumb.R
+    4300000: Body
+    9500000: //RootNode
+    13700000: Body
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: body color
+    second: {fileID: 2100000, guid: 6331fc7f2808c9147aa2815860f1598b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: eyes
+    second: {fileID: 2100000, guid: 0ffafa47b8a0d9c4d863c6e04f4c9fbc, type: 2}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    rootMotionBoneRotation: {x: 0, y: 0, z: 0, w: 1}
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
