@@ -70,16 +70,16 @@ public class Skeleton
 
 public abstract class BaseBone
 {
-    public Vector3 LocalPosition; //Bone (link) position without any rotation applied to it in local space
+    public Vector3 LocalLinkPosition; //Bone (link) position without any rotation applied to it in local space
     public Quaternion LocalRotation;
 
-    protected readonly Vector3 BaseLocalPosition;
+    protected readonly Vector3 BaseLocalLinkPosition;
     protected readonly Quaternion BaseLocalRotation;
 
-    protected BaseBone(Vector3 localPosition, Quaternion localRotation)
+    protected BaseBone(Vector3 localLinkPosition, Quaternion localRotation)
     {
-        LocalPosition = localPosition;
-        BaseLocalPosition = localPosition;
+        LocalLinkPosition = localLinkPosition;
+        BaseLocalLinkPosition = localLinkPosition;
 
         LocalRotation = localRotation;
         BaseLocalRotation = localRotation;
@@ -92,16 +92,16 @@ public abstract class BaseBone
 
 public class RootBone : BaseBone
 {
-    public RootBone(Vector3 localPosition, Quaternion localRotation) : base(localPosition, localRotation) { }
+    public RootBone(Vector3 localLinkPosition, Quaternion localRotation) : base(localLinkPosition, localRotation) { }
 
     public override Matrix4x4 GetLocalBasePoseTransformation(Skeleton skeleton)
     {
-        return Matrix4x4.TRS(BaseLocalPosition, BaseLocalRotation, Vector3.one).inverse;
+        return (Matrix4x4.Translate(BaseLocalLinkPosition) * Matrix4x4.Rotate(BaseLocalRotation)).inverse;
     }
 
     public override Matrix4x4 GetWorldCurrentPoseTransformation(Skeleton skeleton)
     {
-        return Matrix4x4.TRS(LocalPosition, LocalRotation, Vector3.one);
+        return Matrix4x4.Translate(LocalLinkPosition) * Matrix4x4.Rotate(LocalRotation);
     }
 }
 
@@ -109,7 +109,7 @@ public class Bone : BaseBone
 {
     public readonly string PreviousBoneId;
 
-    public Bone(Vector3 localPosition, Quaternion localRotation, string previousBoneId) : base(localPosition, localRotation)
+    public Bone(Vector3 localLinkPosition, Quaternion localRotation, string previousBoneId) : base(localLinkPosition, localRotation)
     {
         PreviousBoneId = previousBoneId;
     }
@@ -119,7 +119,8 @@ public class Bone : BaseBone
         BaseBone previousBone;
        if(!skeleton.BoneIdBoneDictionary.TryGetValue(PreviousBoneId, out previousBone))
             Debug.LogException(new Exception("Bone not found: " + PreviousBoneId));
-        return Matrix4x4.TRS(BaseLocalPosition, BaseLocalRotation, Vector3.one).inverse * previousBone.GetLocalBasePoseTransformation(skeleton);
+       
+        return (Matrix4x4.Translate(BaseLocalLinkPosition) * Matrix4x4.Rotate(BaseLocalRotation)).inverse * previousBone.GetLocalBasePoseTransformation(skeleton);
     }
 
     public override Matrix4x4 GetWorldCurrentPoseTransformation(Skeleton skeleton)
@@ -127,6 +128,7 @@ public class Bone : BaseBone
         BaseBone previousBone;
         if (!skeleton.BoneIdBoneDictionary.TryGetValue(PreviousBoneId, out previousBone))
             Debug.LogException(new Exception("Bone not found: " + PreviousBoneId));
-        return previousBone.GetWorldCurrentPoseTransformation(skeleton) * Matrix4x4.TRS(LocalPosition, LocalRotation, Vector3.one);
+        
+        return previousBone.GetWorldCurrentPoseTransformation(skeleton) * Matrix4x4.Translate(LocalLinkPosition) * Matrix4x4.Rotate(LocalRotation);
     }
 }
