@@ -53,6 +53,16 @@ public class AnimationController : MonoBehaviour
             }
             else
             {
+                var parentIndex = -1;
+                for (var j = 0; j < ReferenceMesh.bones.Length; j++)
+                {
+                    if (ReferenceMesh.bones[j] != ReferenceMesh.bones[i].parent) continue;
+
+                    parentIndex = j;
+                    break;
+                }
+                localRotation = (ReferenceMesh.sharedMesh.bindposes[parentIndex] * ReferenceMesh.sharedMesh.bindposes[i].inverse).rotation;
+                localPosition = (ReferenceMesh.sharedMesh.bindposes[parentIndex] * ReferenceMesh.sharedMesh.bindposes[i].inverse).GetColumn(3);
                 nameBoneDictionary.Add(ReferenceMesh.bones[i].name, new Bone(localPosition, localRotation, ReferenceMesh.bones[i].parent.name));
             }
         }
@@ -92,7 +102,7 @@ public class AnimationController : MonoBehaviour
     //Apply the bone transformations to the mesh
     private void UpdateMesh()
     {
-        AnimatedMesh.mesh.vertices = Skeleton.UpdatePose(AnimatedMesh.mesh.vertices);
+        AnimatedMesh.mesh.vertices = Skeleton.UpdateVertices(AnimatedMesh.mesh.vertices);
         AnimatedMesh.mesh.RecalculateBounds();
     }
 }
