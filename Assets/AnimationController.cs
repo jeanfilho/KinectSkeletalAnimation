@@ -36,19 +36,27 @@ public class AnimationController : MonoBehaviour
         var basePoseVertices = new Vector3[ReferenceMesh.sharedMesh.vertices.Length];
         var nameBoneDictionary = new Dictionary<string, BaseBone>();
         var vertexIdBoneWeightDictionary = new Dictionary<int, Dictionary<string, float>>();
-        
+
         //Load vertices for basePose
         Array.Copy(ReferenceMesh.sharedMesh.vertices, basePoseVertices, basePoseVertices.Length);
 
         //bones could for example be pulled from a SkinnedMeshRenderer
-        ReferenceMesh.rootBone.name = "root";
-        nameBoneDictionary.Add(ReferenceMesh.rootBone.name, new RootBone(ReferenceMesh.rootBone.localPosition, ReferenceMesh.rootBone.localRotation));
-        foreach (var bone in ReferenceMesh.bones)
+        for (var i = 0; i < ReferenceMesh.bones.Length; i++)
         {
-            if (ReferenceMesh.rootBone == bone) continue;
-            nameBoneDictionary.Add(bone.name, new Bone(bone.localPosition, bone.localRotation, bone.parent.name));
+            var localPosition = ReferenceMesh.sharedMesh.bindposes[i].inverse.GetColumn(3);
+            var localRotation = ReferenceMesh.sharedMesh.bindposes[i].inverse.rotation;
+
+            if (i == 0)
+            {
+                ReferenceMesh.rootBone.name = "root";
+                nameBoneDictionary.Add(ReferenceMesh.rootBone.name, new RootBone(localPosition, localRotation));
+            }
+            else
+            {
+                nameBoneDictionary.Add(ReferenceMesh.bones[i].name, new Bone(localPosition, localRotation, ReferenceMesh.bones[i].parent.name));
+            }
         }
-        
+
         //Unity BoneWeight class can assign up to four bones to each vertex, acessable via bone inicies
         var boneWeights = ReferenceMesh.sharedMesh.boneWeights;
         for (var i = 0; i < basePoseVertices.Length; i++)
@@ -76,8 +84,9 @@ public class AnimationController : MonoBehaviour
     //Update skeleton using kinect sensor data
     private void UpdateBones()
     {
-        //TODO - do actual implementation, this is just a test
-        Skeleton.BoneIdBoneDictionary["Upper arm.R"].LocalRotation = Quaternion.Euler(0, 45 * Time.timeSinceLevelLoad, 0);
+        //TODO - do actual implementation, this is just a test 
+        Skeleton.BoneIdBoneDictionary["Upper arm.R"].LocalRotation *= Quaternion.Euler(0, 0, 45 * Time.deltaTime);
+        //Skeleton.BoneIdBoneDictionary["Upper arm.R"].LocalLinkPosition = new Vector3(0, 3, 0);
     }
 
     //Apply the bone transformations to the mesh
