@@ -77,7 +77,7 @@ public class AnimationController : MonoBehaviour
     private void UpdateBones()
     {
         //TODO - do actual implementation, this is just a test
-        Skeleton.BoneIdBoneDictionary["root"].LocalRotation *= Quaternion.Euler(100, 45, 50);
+        Skeleton.BoneIdBoneDictionary["Upper arm.R"].LocalRotation *= Quaternion.Euler(0, 45, 0);
     }
 
     //Apply the bone transformations to the mesh

@@ -58,8 +58,6 @@ public class Skeleton
                 updatedPosition *= boneWeight.Value;
 
                 finalPosition += updatedPosition;
-                if(boneWeight.Key == "root")
-                    Debug.Log(currentPosition.x + " " + currentPosition.y + " " + currentPosition.z + " " +  " || " + finalPosition.x + " " + finalPosition.y + " " + finalPosition.z);
             }
             //Normalize bone influences
             currentMesh[i] = finalPosition;
@@ -98,7 +96,7 @@ public class RootBone : BaseBone
 
     public override Matrix4x4 GetLocalBasePoseTransformation(Skeleton skeleton)
     {
-        return Matrix4x4.TRS(Vector3.zero, LocalRotation, Vector3.one).inverse;
+        return Matrix4x4.TRS(BaseLocalPosition, BaseLocalRotation, Vector3.one).inverse;
     }
 
     public override Matrix4x4 GetWorldCurrentPoseTransformation(Skeleton skeleton)
