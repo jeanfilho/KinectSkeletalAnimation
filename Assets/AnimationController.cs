@@ -104,5 +104,6 @@ public class AnimationController : MonoBehaviour
     {
         AnimatedMesh.mesh.vertices = Skeleton.UpdateVertices(AnimatedMesh.mesh.vertices);
         AnimatedMesh.mesh.RecalculateBounds();
+        AnimatedMesh.mesh.RecalculateNormals();
     }
 }

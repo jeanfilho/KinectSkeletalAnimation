@@ -38,6 +38,12 @@ public class Skeleton
     //Transform mesh vertices accourding to the transformation of each bone
     public Vector3[] UpdateVertices(Vector3[] currentMesh)
     {
+
+        foreach (var bone in BoneIdBoneDictionary)
+        {
+            bone.Value.UpdateBasePoseTransformation(this);
+            bone.Value.UpdateCurrentPoseTransformation(this);
+        }
         //Get the current pose position for every vertex
         for (int i = 0; i < currentMesh.Length; i++)
         {
@@ -79,6 +85,9 @@ public abstract class BaseBone
     protected readonly Vector3 BaseLocalLinkPosition;
     protected readonly Quaternion BaseLocalRotation;
 
+    protected Matrix4x4 BasePoseTransformation = Matrix4x4.identity;
+    protected Matrix4x4 CurrentPoseTransformation = Matrix4x4.identity;
+
     protected BaseBone(Vector3 localLinkPosition, Quaternion localRotation)
     {
         LocalLinkPosition = localLinkPosition;
@@ -89,22 +98,31 @@ public abstract class BaseBone
     }
 
 
-    public abstract Matrix4x4 GetBasePoseTransformation(Skeleton skeleton);
-    public abstract Matrix4x4 GetCurrentPoseTransformation(Skeleton skeleton);
+    public Matrix4x4 GetBasePoseTransformation(Skeleton skeleton)
+    {
+        return BasePoseTransformation;
+    }
+
+    public Matrix4x4 GetCurrentPoseTransformation(Skeleton skeleton)
+    {
+        return CurrentPoseTransformation;
+    }
+    public abstract void UpdateBasePoseTransformation(Skeleton skeleton);
+    public abstract void UpdateCurrentPoseTransformation(Skeleton skeleton);
 }
 
 public class RootBone : BaseBone
 {
     public RootBone(Vector3 localLinkPosition, Quaternion localRotation) : base(localLinkPosition, localRotation) { }
 
-    public override Matrix4x4 GetBasePoseTransformation(Skeleton skeleton)
+    public override void UpdateBasePoseTransformation(Skeleton skeleton)
     {
-        return Matrix4x4.Translate(BaseLocalLinkPosition) * Matrix4x4.Rotate(BaseLocalRotation);
+        BasePoseTransformation = Matrix4x4.Translate(BaseLocalLinkPosition) * Matrix4x4.Rotate(BaseLocalRotation);
     }
 
-    public override Matrix4x4 GetCurrentPoseTransformation(Skeleton skeleton)
+    public override void UpdateCurrentPoseTransformation(Skeleton skeleton)
     {
-        return Matrix4x4.Translate(LocalLinkPosition) * Matrix4x4.Rotate(LocalRotation);
+        CurrentPoseTransformation = Matrix4x4.Translate(LocalLinkPosition) * Matrix4x4.Rotate(LocalRotation);
     }
 }
 
@@ -117,22 +135,23 @@ public class Bone : BaseBone
         PreviousBoneId = previousBoneId;
     }
 
-    public override Matrix4x4 GetBasePoseTransformation(Skeleton skeleton)
-    {
-        BaseBone previousBone;
-       if(!skeleton.BoneIdBoneDictionary.TryGetValue(PreviousBoneId, out previousBone))
-            Debug.LogException(new Exception("Bone not found: " + PreviousBoneId));
-       
-
-        return previousBone.GetBasePoseTransformation(skeleton) * Matrix4x4.Translate(BaseLocalLinkPosition) * Matrix4x4.Rotate(BaseLocalRotation);
-    }
-
-    public override Matrix4x4 GetCurrentPoseTransformation(Skeleton skeleton)
+    public override void UpdateBasePoseTransformation(Skeleton skeleton)
     {
         BaseBone previousBone;
         if (!skeleton.BoneIdBoneDictionary.TryGetValue(PreviousBoneId, out previousBone))
             Debug.LogException(new Exception("Bone not found: " + PreviousBoneId));
-        
-        return previousBone.GetCurrentPoseTransformation(skeleton) * Matrix4x4.Translate(LocalLinkPosition) * Matrix4x4.Rotate(LocalRotation);
+
+        previousBone.UpdateBasePoseTransformation(skeleton);
+        BasePoseTransformation = previousBone.GetBasePoseTransformation(skeleton) * Matrix4x4.Translate(BaseLocalLinkPosition) * Matrix4x4.Rotate(BaseLocalRotation);
+    }
+
+    public override void UpdateCurrentPoseTransformation(Skeleton skeleton)
+    {
+        BaseBone previousBone;
+        if (!skeleton.BoneIdBoneDictionary.TryGetValue(PreviousBoneId, out previousBone))
+            Debug.LogException(new Exception("Bone not found: " + PreviousBoneId));
+
+        previousBone.UpdateCurrentPoseTransformation(skeleton);
+        CurrentPoseTransformation = previousBone.GetCurrentPoseTransformation(skeleton) * Matrix4x4.Translate(LocalLinkPosition) * Matrix4x4.Rotate(LocalRotation);
     }
 }
