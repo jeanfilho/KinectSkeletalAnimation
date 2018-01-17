@@ -9,9 +9,10 @@ public class Skeleton
     public readonly Dictionary<int, Dictionary<string, float>> VertexIdBoneWeightDictionary;
 
     public readonly Vector3[] BasePoseVertices;
-    
+    public readonly Vector3[] BasePoseNormals;
+
     //Root bone should have ID == "root"
-    public Skeleton(Dictionary<string, BaseBone> boneIdBoneDictionary, Dictionary<int, Dictionary<string, float>> vertexIdBoneWeightDictionary, Vector3[] basePoseVertices)
+    public Skeleton(Dictionary<string, BaseBone> boneIdBoneDictionary, Dictionary<int, Dictionary<string, float>> vertexIdBoneWeightDictionary, Vector3[] basePoseVertices, Vector3[] basePoseNormals)
     {
         //Check if weights are normalized
         foreach (var vertexIdBoneWeight in vertexIdBoneWeightDictionary)
@@ -26,28 +27,34 @@ public class Skeleton
         //Check for root bone
         if(!boneIdBoneDictionary.ContainsKey("root"))
             Debug.LogException(new Exception("No \"root\" bone found in dictionary - Mark the root bone with the id \"root\""));
-
-
+        
         //Assign variables
         BoneIdBoneDictionary = boneIdBoneDictionary;
         VertexIdBoneWeightDictionary = vertexIdBoneWeightDictionary;
         BasePoseVertices = basePoseVertices;
+        BasePoseNormals = basePoseNormals;
+
+        //Calculate base pose matrices
+        foreach (var bone in BoneIdBoneDictionary)
+            bone.Value.UpdateBasePoseTransformation(this);
     }
 
 
     //Transform mesh vertices accourding to the transformation of each bone
-    public Vector3[] UpdateVertices(Vector3[] currentMesh)
+    public void UpdateVertices(out Vector3[] vertices, out Vector3[] normals)
     {
-
+        //Update current pose matrices
         foreach (var bone in BoneIdBoneDictionary)
-        {
-            bone.Value.UpdateBasePoseTransformation(this);
             bone.Value.UpdateCurrentPoseTransformation(this);
-        }
-        //Get the current pose position for every vertex
-        for (int i = 0; i < currentMesh.Length; i++)
+
+        vertices = new Vector3[BasePoseVertices.Length];
+        normals = new Vector3[BasePoseNormals.Length];
+
+        //Get the current pose position and normal for every vertex
+        for (int i = 0; i < vertices.Length; i++)
         {
             var finalPosition = Vector4.zero;
+            var finalNormal = Vector4.zero;
             var weightSum = 0f;
 
             //Sum over all bone influences
@@ -58,21 +65,24 @@ public class Skeleton
                     continue;
 
                 var currentBone = BoneIdBoneDictionary[boneWeight.Key];
-                var basePoseMatrix = currentBone.GetBasePoseTransformation(this).inverse;
-                var currentPoseMatrix = currentBone.GetCurrentPoseTransformation(this);
+                var basePoseMatrix = currentBone.GetBasePoseTransformation().inverse;
+                var currentPoseMatrix = currentBone.GetCurrentPoseTransformation();
+
                 var currentPosition = new Vector4(BasePoseVertices[i].x, BasePoseVertices[i].y, BasePoseVertices[i].z, 1.0f);
-                var updatedPosition = currentPoseMatrix * basePoseMatrix * currentPosition;
-                updatedPosition *= boneWeight.Value;
+                var updatedPosition = (currentPoseMatrix * basePoseMatrix * currentPosition) * boneWeight.Value;
+                
+                var currentNormal = new Vector4(BasePoseNormals[i].x, BasePoseNormals[i].y, BasePoseNormals[i].z, 0f);
+                var updatedNormal = (currentPoseMatrix * basePoseMatrix * currentNormal) * boneWeight.Value;
 
                 finalPosition += updatedPosition;
+                finalNormal += updatedNormal;
                 weightSum += boneWeight.Value;
             }
             //Normalize bone influences
             var normalizationFactor = 1f / weightSum;
-            currentMesh[i] = finalPosition * normalizationFactor;
+            vertices[i] = finalPosition * normalizationFactor;
+            normals[i] = (finalNormal * normalizationFactor).normalized;
         }
-
-        return currentMesh;
     }
 }
 
@@ -98,12 +108,12 @@ public abstract class BaseBone
     }
 
 
-    public Matrix4x4 GetBasePoseTransformation(Skeleton skeleton)
+    public Matrix4x4 GetBasePoseTransformation()
     {
         return BasePoseTransformation;
     }
 
-    public Matrix4x4 GetCurrentPoseTransformation(Skeleton skeleton)
+    public Matrix4x4 GetCurrentPoseTransformation()
     {
         return CurrentPoseTransformation;
     }
@@ -142,7 +152,7 @@ public class Bone : BaseBone
             Debug.LogException(new Exception("Bone not found: " + PreviousBoneId));
 
         previousBone.UpdateBasePoseTransformation(skeleton);
-        BasePoseTransformation = previousBone.GetBasePoseTransformation(skeleton) * Matrix4x4.Translate(BaseLocalLinkPosition) * Matrix4x4.Rotate(BaseLocalRotation);
+        BasePoseTransformation = previousBone.GetBasePoseTransformation() * Matrix4x4.Translate(BaseLocalLinkPosition) * Matrix4x4.Rotate(BaseLocalRotation);
     }
 
     public override void UpdateCurrentPoseTransformation(Skeleton skeleton)
@@ -152,6 +162,6 @@ public class Bone : BaseBone
             Debug.LogException(new Exception("Bone not found: " + PreviousBoneId));
 
         previousBone.UpdateCurrentPoseTransformation(skeleton);
-        CurrentPoseTransformation = previousBone.GetCurrentPoseTransformation(skeleton) * Matrix4x4.Translate(LocalLinkPosition) * Matrix4x4.Rotate(LocalRotation);
+        CurrentPoseTransformation = previousBone.GetCurrentPoseTransformation() * Matrix4x4.Translate(LocalLinkPosition) * Matrix4x4.Rotate(LocalRotation);
     }
 }

@@ -34,11 +34,13 @@ public class AnimationController : MonoBehaviour
         _vertices = new List<Vector3>(AnimatedMesh.mesh.vertices.Length);
 
         var basePoseVertices = new Vector3[ReferenceMesh.sharedMesh.vertices.Length];
+        var basePoseNormals = new Vector3[ReferenceMesh.sharedMesh.normals.Length];
         var nameBoneDictionary = new Dictionary<string, BaseBone>();
         var vertexIdBoneWeightDictionary = new Dictionary<int, Dictionary<string, float>>();
 
-        //Load vertices for basePose
+        //Load vertices and normals for basePose
         Array.Copy(ReferenceMesh.sharedMesh.vertices, basePoseVertices, basePoseVertices.Length);
+        Array.Copy(ReferenceMesh.sharedMesh.normals, basePoseNormals, basePoseNormals.Length);
 
         //bones could for example be pulled from a SkinnedMeshRenderer
         for (var i = 0; i < ReferenceMesh.bones.Length; i++)
@@ -88,22 +90,26 @@ public class AnimationController : MonoBehaviour
         }
 
         //Create a skeleton
-        Skeleton = new Skeleton(nameBoneDictionary, vertexIdBoneWeightDictionary, basePoseVertices);
+        Skeleton = new Skeleton(nameBoneDictionary, vertexIdBoneWeightDictionary, basePoseVertices, basePoseNormals);
     }
 
     //Update skeleton using kinect sensor data
     private void UpdateBones()
     {
         //TODO - do actual implementation, this is just a test 
-        Skeleton.BoneIdBoneDictionary["Upper arm.R"].LocalRotation *= Quaternion.Euler(0, 0, 45 * Time.deltaTime);
+        Skeleton.BoneIdBoneDictionary["Upper arm.R"].LocalRotation *= Quaternion.Euler(0, 45 * Time.deltaTime, 0);
         //Skeleton.BoneIdBoneDictionary["Upper arm.R"].LocalLinkPosition = new Vector3(0, 3, 0);
     }
 
     //Apply the bone transformations to the mesh
     private void UpdateMesh()
     {
-        AnimatedMesh.mesh.vertices = Skeleton.UpdateVertices(AnimatedMesh.mesh.vertices);
+        Vector3[] vertices, normals;
+
+        Skeleton.UpdateVertices(out vertices, out normals);
+        AnimatedMesh.mesh.vertices = vertices;
+        AnimatedMesh.mesh.normals = normals;
+
         AnimatedMesh.mesh.RecalculateBounds();
-        AnimatedMesh.mesh.RecalculateNormals();
     }
 }
