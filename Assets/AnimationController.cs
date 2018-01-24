@@ -7,15 +7,21 @@ using UnityEngine;
 public class AnimationController : MonoBehaviour
 {
     public KinectSensor Sensor;
+    public BodyFrameReader Reader;
+    public Body[] Data;
     public Skeleton Skeleton;
     public SkinnedMeshRenderer ReferenceMesh;
     public MeshFilter AnimatedMesh;
 
     private List<Vector3> _vertices;
+    private Dictionary<string, JointType> _knucklesToKinect = new Dictionary<string, JointType>();
 
     void Awake()
     {
         Sensor = KinectSensor.GetDefault();
+        Sensor.Open();
+        Reader = Sensor.BodyFrameSource.OpenReader();
+        MapKinectSkeletonToModel();
         LoadModel();
     }
 
@@ -23,6 +29,13 @@ public class AnimationController : MonoBehaviour
     {
         UpdateBones();
         UpdateMesh();
+    }
+
+    void OnApplicationQuit()
+    {
+        Reader.Dispose();
+        if(Sensor.IsOpen)
+            Sensor.Close();
     }
 
     //Load model from unity, map model bones to our bone structure and create a skeleton
@@ -96,9 +109,38 @@ public class AnimationController : MonoBehaviour
     //Update skeleton using kinect sensor data
     private void UpdateBones()
     {
-        //TODO - do actual implementation, this is just a test 
-        Skeleton.BoneIdBoneDictionary["Upper arm.R"].LocalRotation *= Quaternion.Euler(0, 45 * Time.deltaTime, 0);
-        //Skeleton.BoneIdBoneDictionary["Upper arm.R"].LocalLinkPosition = new Vector3(0, 3, 0);
+        //Get most actual kinect frame
+        var frame = Reader.AcquireLatestFrame();
+        if (frame != null)
+        {
+            //Update data
+            if(Data == null)
+                Data = new Body[Sensor.BodyFrameSource.BodyCount];
+            frame.GetAndRefreshBodyData(Data);
+
+            //Transfer kinect bone data to our 3D model
+            foreach (var body in Data)
+            {
+                if (body == null)
+                {
+                    continue;
+                }
+
+                if (body.IsTracked)
+                {
+                    foreach (var bone in _knucklesToKinect)
+                    {
+                        var jointOrientation = Data[0].JointOrientations[bone.Value].Orientation;
+                        Skeleton.BoneIdBoneDictionary[bone.Key].LocalRotation = new Quaternion(jointOrientation.X, jointOrientation.Y, jointOrientation.Z, jointOrientation.W);
+                    }
+                }
+            }
+            
+
+            //Dispose current frame
+            frame.Dispose();
+            frame = null;
+        }
     }
 
     //Apply the bone transformations to the mesh
@@ -111,5 +153,45 @@ public class AnimationController : MonoBehaviour
         AnimatedMesh.mesh.normals = normals;
 
         AnimatedMesh.mesh.RecalculateBounds();
+    }
+
+    //Creates a mapping between our model and kinect skeleton
+    private void MapKinectSkeletonToModel()
+    {
+        //Main body
+        _knucklesToKinect.Add("root", JointType.SpineBase);
+        _knucklesToKinect.Add("Spine", JointType.SpineMid);
+        _knucklesToKinect.Add("Chest", JointType.SpineShoulder);
+
+        return;
+
+        //Head and neck
+        _knucklesToKinect.Add("Neck", JointType.Neck);
+        _knucklesToKinect.Add("Head", JointType.Head);
+
+        //Left arm
+        _knucklesToKinect.Add("Upper arm.L", JointType.ShoulderLeft);
+        _knucklesToKinect.Add("Lower arm.L", JointType.ElbowLeft);
+        _knucklesToKinect.Add("Hand.L", JointType.WristLeft);
+        _knucklesToKinect.Add("Upper thumb.L", JointType.ThumbLeft);
+
+        //Left leg
+        _knucklesToKinect.Add("Upper leg.L", JointType.HipLeft);
+        _knucklesToKinect.Add("Lower leg.L", JointType.KneeLeft);
+        _knucklesToKinect.Add("Foot.L", JointType.AnkleLeft);
+        _knucklesToKinect.Add("Toe.L", JointType.FootLeft);
+
+        //Right leg
+        _knucklesToKinect.Add("Upper leg.R", JointType.HipRight);
+        _knucklesToKinect.Add("Lower leg.R", JointType.KneeRight);
+        _knucklesToKinect.Add("Foot.R", JointType.AnkleRight);
+        _knucklesToKinect.Add("Toe.R", JointType.FootRight);
+
+        
+        //Right arm
+        _knucklesToKinect.Add("Upper arm.R", JointType.ShoulderRight);
+        _knucklesToKinect.Add("Lower arm.R", JointType.ElbowRight);
+        _knucklesToKinect.Add("Hand.R", JointType.WristRight);
+        _knucklesToKinect.Add("Upper thumb.R", JointType.ThumbRight);
     }
 }
