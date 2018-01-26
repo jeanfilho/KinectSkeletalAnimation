@@ -92,8 +92,8 @@ public abstract class BaseBone
     public Vector3 LocalLinkPosition; //Bone (link) position without any rotation applied to it in local space
     public Quaternion LocalRotation;
 
-    protected readonly Vector3 BaseLocalLinkPosition;
-    protected readonly Quaternion BaseLocalRotation;
+    public readonly Vector3 BaseLocalLinkPosition;
+    public readonly Quaternion BaseLocalRotation;
 
     protected Matrix4x4 BasePoseTransformation = Matrix4x4.identity;
     protected Matrix4x4 CurrentPoseTransformation = Matrix4x4.identity;

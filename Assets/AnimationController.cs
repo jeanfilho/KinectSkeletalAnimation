@@ -147,35 +147,38 @@ public class AnimationController : MonoBehaviour
                 {
                     foreach (var bone in _knucklesToKinect)
                     {
-                        var jointOrientation = Data[0].JointOrientations[bone.Value].Orientation;
+                        var jointOrientation = Data[0].JointOrientations[bone.Value].Orientation.ToQuaternion(false);
+                        var jointPosition = Data[0].Joints[bone.Value].Position.ToUnityVector3();
 
+                        //For root, no adjustment needed
                         if (bone.Key == "root")
                         {
-                            Skeleton.BoneIdBoneDictionary[bone.Key].LocalRotation = new Quaternion(jointOrientation.X, jointOrientation.Y, jointOrientation.Z, jointOrientation.W);
+                            Skeleton.BoneIdBoneDictionary[bone.Key].LocalRotation = jointOrientation;
                             continue;
                         }
-                        var parentGO = GameObject.Find(bone.Key).transform.parent;
-                        while (!_knucklesToKinect.ContainsKey(parentGO.name))
-                            parentGO = parentGO.transform.parent;
 
-                        var kin = Data[0].JointOrientations[_knucklesToKinect[parentGO.name]].Orientation;
-                        var quat = Quaternion.Inverse(new Quaternion(kin.X, kin.Y, kin.Z, kin.W));
+                        //Calculate the local rotation from the kinect system -> https://msdn.microsoft.com/en-us/library/hh973073.aspx
+                        var parent = GameObject.Find(bone.Key).transform.parent;
+                        while (!_knucklesToKinect.ContainsKey(parent.name))
+                            parent = parent.transform.parent;
+                        var parentRotation = Data[0].JointOrientations[_knucklesToKinect[parent.name]].Orientation
+                            .ToQuaternion(false);
+                        var parentPosition = Data[0].Joints[_knucklesToKinect[parent.name]].Position.ToUnityVector3();
 
-                        if (bone.Key == "Upper arm.R")
-                            quat = Quaternion.Euler(0, 0, 90) * quat;
+                        var direction = (jointPosition - parentPosition).normalized;
+                        var perpendicular = Vector3.Cross(direction, Vector3.forward);
+                        var binormal = Vector3.Cross(perpendicular, direction);
 
-                        if (bone.Key == "Upper arm.L")
-                            quat = Quaternion.Euler(0, 0, -90) * quat;
+                        Quaternion rotation;
+                        if (binormal.magnitude > 0.0001f)
+                            rotation = Quaternion.Euler(-90, 180, 0) * Quaternion.LookRotation(direction, binormal);
+                        else
+                            rotation = Quaternion.identity;
 
-                        if (bone.Key == "Upper leg.L")
-                            quat = Quaternion.Euler(quat.ToEuler().x, quat.ToEuler().y, quat.ToEuler().z - 90);
-
-                        if (bone.Key == "Lower leg.L")
-                            quat = Quaternion.Euler(quat.ToEuler().x + 180, quat.ToEuler().y + 180, quat.ToEuler().z);
-
-
-
-                        Skeleton.BoneIdBoneDictionary[bone.Key].LocalRotation = quat * new Quaternion(jointOrientation.X, jointOrientation.Y, jointOrientation.Z, jointOrientation.W);
+                        if(bone.Key == "Head")
+                            Skeleton.BoneIdBoneDictionary[bone.Key].LocalRotation = rotation;
+                        else
+                            Skeleton.BoneIdBoneDictionary[bone.Key].LocalRotation = rotation;
 
                         //Debug.Log("Bone Stuff: " + jointOrientation.X + " " + jointOrientation.Y + " " + jointOrientation.Z + " " + jointOrientation.W);
                     }
@@ -210,33 +213,71 @@ public class AnimationController : MonoBehaviour
         _knucklesToKinect.Add("Chest", JointType.SpineShoulder);
 
 
-        //Head and neck
+        ////Head and neck
         _knucklesToKinect.Add("Neck", JointType.Neck);
         _knucklesToKinect.Add("Head", JointType.Head);
 
-        //Left arm
-        _knucklesToKinect.Add("Upper arm.R", JointType.ShoulderLeft);
-        _knucklesToKinect.Add("Lower arm.R", JointType.ElbowLeft);
-        _knucklesToKinect.Add("Hand.R", JointType.WristLeft);
-        _knucklesToKinect.Add("Upper thumb.R", JointType.ThumbLeft);
+        ////Left arm
+        //_knucklesToKinect.Add("Upper arm.R", JointType.ShoulderLeft);
+        //_knucklesToKinect.Add("Lower arm.R", JointType.ElbowLeft);
+        //_knucklesToKinect.Add("Hand.R", JointType.WristLeft);
+        //_knucklesToKinect.Add("Upper thumb.R", JointType.ThumbLeft);
 
-        //Right arm
-        _knucklesToKinect.Add("Upper arm.L", JointType.ShoulderRight);
-        _knucklesToKinect.Add("Lower arm.L", JointType.ElbowRight);
-        _knucklesToKinect.Add("Hand.L", JointType.WristRight);
-        _knucklesToKinect.Add("Upper thumb.L", JointType.ThumbRight);
+        ////Right arm
+        //_knucklesToKinect.Add("Upper arm.L", JointType.ShoulderRight);
+        //_knucklesToKinect.Add("Lower arm.L", JointType.ElbowRight);
+        //_knucklesToKinect.Add("Hand.L", JointType.WristRight);
+        //_knucklesToKinect.Add("Upper thumb.L", JointType.ThumbRight);
 
         ////Left leg
         //_knucklesToKinect.Add("Upper leg.R", JointType.HipLeft);
         //_knucklesToKinect.Add("Lower leg.R", JointType.KneeLeft);
         //_knucklesToKinect.Add("Foot.R", JointType.AnkleLeft);
         //_knucklesToKinect.Add("Toe.R", JointType.FootLeft);
-        //Right leg
-        _knucklesToKinect.Add("Upper leg.L", JointType.HipRight);
-        _knucklesToKinect.Add("Lower leg.L", JointType.KneeRight);
+        ////Right leg
+        //_knucklesToKinect.Add("Upper leg.L", JointType.HipRight);
+        //_knucklesToKinect.Add("Lower leg.L", JointType.KneeRight);
         //_knucklesToKinect.Add("Foot.L", JointType.AnkleRight);
         //_knucklesToKinect.Add("Toe.L", JointType.FootRight);
 
 
+    }
+
+    void OnDrawGizmos()
+    {
+        if (Data == null)
+            return; 
+
+        foreach (var bone in _knucklesToKinect)
+        {
+            var position = Data[0].Joints[bone.Value].Position.ToUnityVector3();
+            var orientation = Data[0].JointOrientations[bone.Value].Orientation.ToQuaternion(false);
+            var parent = GameObject.Find(bone.Key).transform.parent;
+            var rotation = orientation;
+            //For root, no adjustment needed
+            if (bone.Key != "root")
+            {
+                while (!_knucklesToKinect.ContainsKey(parent.name))
+                    parent = parent.transform.parent;
+                var parentRotation = Data[0].JointOrientations[_knucklesToKinect[parent.name]].Orientation
+                    .ToQuaternion(false);
+                var parentPosition = Data[0].Joints[_knucklesToKinect[parent.name]].Position.ToUnityVector3();
+
+                orientation = parentRotation * orientation;
+
+
+                var direction = position - parentPosition;
+                var normal = Vector3.Cross(direction, Vector3.up);
+                var binormal = Vector3.Cross(normal, direction);
+
+                rotation = Quaternion.LookRotation(direction, binormal);
+            }
+            else
+            {
+                rotation = Quaternion.identity;
+            }
+
+            Gizmos.DrawLine(position, position + rotation * Vector3.forward);
+        }
     }
 }

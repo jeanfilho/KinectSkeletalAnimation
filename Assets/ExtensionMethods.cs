@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Windows.Kinect;
 using UnityEngine;
+using Vector4 = Windows.Kinect.Vector4;
 
 public static class ExtensionMethods {
 
@@ -28,5 +30,15 @@ public static class ExtensionMethods {
         }
 
         return newMesh;
+    }
+
+    public static Quaternion ToQuaternion(this Vector4 vector4, bool mirror)
+    {
+        return new Quaternion(vector4.X, (mirror ? -1 : 1) * vector4.Y, (mirror ? -1 : 1) * vector4.Z, vector4.W);
+    }
+
+    public static Vector3 ToUnityVector3(this CameraSpacePoint cameraSpacePoint)
+    {
+        return new Vector3(cameraSpacePoint.X, cameraSpacePoint.Y, cameraSpacePoint.Z);
     }
 }
