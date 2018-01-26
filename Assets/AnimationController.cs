@@ -34,7 +34,7 @@ public class AnimationController : MonoBehaviour
     void OnApplicationQuit()
     {
         Reader.Dispose();
-        if(Sensor.IsOpen)
+        if (Sensor.IsOpen)
             Sensor.Close();
     }
 
@@ -55,11 +55,23 @@ public class AnimationController : MonoBehaviour
         Array.Copy(ReferenceMesh.sharedMesh.vertices, basePoseVertices, basePoseVertices.Length);
         Array.Copy(ReferenceMesh.sharedMesh.normals, basePoseNormals, basePoseNormals.Length);
 
+        var bindPoses = new Matrix4x4[ReferenceMesh.sharedMesh.bindposes.Length];
+        Array.Copy(ReferenceMesh.sharedMesh.bindposes, bindPoses, bindPoses.Length);
+
+        //for (var i = 0; i < bindPoses.Length; i++)
+        //{
+        //    if (ReferenceMesh.bones[i].name == "Upper arm.R")
+        //        bindPoses[i] = Matrix4x4.Rotate(Quaternion.Euler(0, 0, 90)) * bindPoses[i];
+        //    if (ReferenceMesh.bones[i].name == "Upper arm.L")
+        //        bindPoses[i] = Matrix4x4.Rotate(Quaternion.Euler(0, 0, -90)) * bindPoses[i];
+
+        //}
+
         //bones could for example be pulled from a SkinnedMeshRenderer
         for (var i = 0; i < ReferenceMesh.bones.Length; i++)
         {
-            var localPosition = ReferenceMesh.sharedMesh.bindposes[i].inverse.GetColumn(3);
-            var localRotation = ReferenceMesh.sharedMesh.bindposes[i].inverse.rotation;
+            var localPosition = bindPoses[i].inverse.GetColumn(3);
+            var localRotation = bindPoses[i].inverse.rotation;
 
             if (i == 0)
             {
@@ -76,8 +88,10 @@ public class AnimationController : MonoBehaviour
                     parentIndex = j;
                     break;
                 }
-                localRotation = (ReferenceMesh.sharedMesh.bindposes[parentIndex] * ReferenceMesh.sharedMesh.bindposes[i].inverse).rotation;
-                localPosition = (ReferenceMesh.sharedMesh.bindposes[parentIndex] * ReferenceMesh.sharedMesh.bindposes[i].inverse).GetColumn(3);
+                localRotation = (bindPoses[parentIndex] * bindPoses[i].inverse).rotation;
+                localPosition = (bindPoses[parentIndex] * bindPoses[i].inverse).GetColumn(3);
+
+
                 nameBoneDictionary.Add(ReferenceMesh.bones[i].name, new Bone(localPosition, localRotation, ReferenceMesh.bones[i].parent.name));
             }
         }
@@ -104,6 +118,9 @@ public class AnimationController : MonoBehaviour
 
         //Create a skeleton
         Skeleton = new Skeleton(nameBoneDictionary, vertexIdBoneWeightDictionary, basePoseVertices, basePoseNormals);
+
+        //Deactivate class
+        ReferenceMesh.gameObject.SetActive(false);
     }
 
     //Update skeleton using kinect sensor data
@@ -114,7 +131,7 @@ public class AnimationController : MonoBehaviour
         if (frame != null)
         {
             //Update data
-            if(Data == null)
+            if (Data == null)
                 Data = new Body[Sensor.BodyFrameSource.BodyCount];
             frame.GetAndRefreshBodyData(Data);
 
@@ -131,11 +148,40 @@ public class AnimationController : MonoBehaviour
                     foreach (var bone in _knucklesToKinect)
                     {
                         var jointOrientation = Data[0].JointOrientations[bone.Value].Orientation;
-                        Skeleton.BoneIdBoneDictionary[bone.Key].LocalRotation = new Quaternion(jointOrientation.X, jointOrientation.Y, jointOrientation.Z, jointOrientation.W);
+
+                        if (bone.Key == "root")
+                        {
+                            Skeleton.BoneIdBoneDictionary[bone.Key].LocalRotation = new Quaternion(jointOrientation.X, jointOrientation.Y, jointOrientation.Z, jointOrientation.W);
+                            continue;
+                        }
+                        var parentGO = GameObject.Find(bone.Key).transform.parent;
+                        while (!_knucklesToKinect.ContainsKey(parentGO.name))
+                            parentGO = parentGO.transform.parent;
+
+                        var kin = Data[0].JointOrientations[_knucklesToKinect[parentGO.name]].Orientation;
+                        var quat = Quaternion.Inverse(new Quaternion(kin.X, kin.Y, kin.Z, kin.W));
+
+                        if (bone.Key == "Upper arm.R")
+                            quat = Quaternion.Euler(0, 0, 90) * quat;
+
+                        if (bone.Key == "Upper arm.L")
+                            quat = Quaternion.Euler(0, 0, -90) * quat;
+
+                        if (bone.Key == "Upper leg.L")
+                            quat = Quaternion.Euler(quat.ToEuler().x, quat.ToEuler().y, quat.ToEuler().z - 90);
+
+                        if (bone.Key == "Lower leg.L")
+                            quat = Quaternion.Euler(quat.ToEuler().x + 180, quat.ToEuler().y + 180, quat.ToEuler().z);
+
+
+
+                        Skeleton.BoneIdBoneDictionary[bone.Key].LocalRotation = quat * new Quaternion(jointOrientation.X, jointOrientation.Y, jointOrientation.Z, jointOrientation.W);
+
+                        //Debug.Log("Bone Stuff: " + jointOrientation.X + " " + jointOrientation.Y + " " + jointOrientation.Z + " " + jointOrientation.W);
                     }
                 }
             }
-            
+
 
             //Dispose current frame
             frame.Dispose();
@@ -163,35 +209,34 @@ public class AnimationController : MonoBehaviour
         _knucklesToKinect.Add("Spine", JointType.SpineMid);
         _knucklesToKinect.Add("Chest", JointType.SpineShoulder);
 
-        return;
 
         //Head and neck
         _knucklesToKinect.Add("Neck", JointType.Neck);
         _knucklesToKinect.Add("Head", JointType.Head);
 
         //Left arm
-        _knucklesToKinect.Add("Upper arm.L", JointType.ShoulderLeft);
-        _knucklesToKinect.Add("Lower arm.L", JointType.ElbowLeft);
-        _knucklesToKinect.Add("Hand.L", JointType.WristLeft);
-        _knucklesToKinect.Add("Upper thumb.L", JointType.ThumbLeft);
+        _knucklesToKinect.Add("Upper arm.R", JointType.ShoulderLeft);
+        _knucklesToKinect.Add("Lower arm.R", JointType.ElbowLeft);
+        _knucklesToKinect.Add("Hand.R", JointType.WristLeft);
+        _knucklesToKinect.Add("Upper thumb.R", JointType.ThumbLeft);
 
-        //Left leg
-        _knucklesToKinect.Add("Upper leg.L", JointType.HipLeft);
-        _knucklesToKinect.Add("Lower leg.L", JointType.KneeLeft);
-        _knucklesToKinect.Add("Foot.L", JointType.AnkleLeft);
-        _knucklesToKinect.Add("Toe.L", JointType.FootLeft);
-
-        //Right leg
-        _knucklesToKinect.Add("Upper leg.R", JointType.HipRight);
-        _knucklesToKinect.Add("Lower leg.R", JointType.KneeRight);
-        _knucklesToKinect.Add("Foot.R", JointType.AnkleRight);
-        _knucklesToKinect.Add("Toe.R", JointType.FootRight);
-
-        
         //Right arm
-        _knucklesToKinect.Add("Upper arm.R", JointType.ShoulderRight);
-        _knucklesToKinect.Add("Lower arm.R", JointType.ElbowRight);
-        _knucklesToKinect.Add("Hand.R", JointType.WristRight);
-        _knucklesToKinect.Add("Upper thumb.R", JointType.ThumbRight);
+        _knucklesToKinect.Add("Upper arm.L", JointType.ShoulderRight);
+        _knucklesToKinect.Add("Lower arm.L", JointType.ElbowRight);
+        _knucklesToKinect.Add("Hand.L", JointType.WristRight);
+        _knucklesToKinect.Add("Upper thumb.L", JointType.ThumbRight);
+
+        ////Left leg
+        //_knucklesToKinect.Add("Upper leg.R", JointType.HipLeft);
+        //_knucklesToKinect.Add("Lower leg.R", JointType.KneeLeft);
+        //_knucklesToKinect.Add("Foot.R", JointType.AnkleLeft);
+        //_knucklesToKinect.Add("Toe.R", JointType.FootLeft);
+        //Right leg
+        _knucklesToKinect.Add("Upper leg.L", JointType.HipRight);
+        _knucklesToKinect.Add("Lower leg.L", JointType.KneeRight);
+        //_knucklesToKinect.Add("Foot.L", JointType.AnkleRight);
+        //_knucklesToKinect.Add("Toe.L", JointType.FootRight);
+
+
     }
 }
