@@ -183,6 +183,7 @@ public class AnimationController : MonoBehaviour
                     rotation = Quaternion.identity;
                 Skeleton.BoneIdBoneDictionary[bone.Key].LocalRotation = rotation;
             }
+
             //Other adjustments
             else if (bone.Key == "Shoulder.R")
             {
@@ -194,22 +195,22 @@ public class AnimationController : MonoBehaviour
             }
             else if (bone.Key == "Upper leg.R")
             {
-                jointOrientation = Quaternion.Euler(0, 180, 0) * jointOrientation;
+                jointOrientation = Quaternion.Euler(jointOrientation.eulerAngles.z, jointOrientation.eulerAngles.y - 90, jointOrientation.eulerAngles.x);
             }
             else if (bone.Key == "Lower leg.R")
             {
-                jointOrientation = Quaternion.Euler(0, 0, 0) * jointOrientation;
+                jointOrientation = Quaternion.Inverse(Quaternion.Euler(parentRotation.eulerAngles.z, parentRotation.eulerAngles.y - 90, parentRotation.eulerAngles.x)) * Quaternion.Euler(jointOrientation.eulerAngles.z + 20, jointOrientation.eulerAngles.y - 90, jointOrientation.eulerAngles.x);
             }
             else if (bone.Key == "Upper leg.L")
             {
-                jointOrientation = Quaternion.Euler(0, 0, 0) * jointOrientation;
+                jointOrientation = Quaternion.Euler(-jointOrientation.eulerAngles.z, jointOrientation.eulerAngles.y + 90, -jointOrientation.eulerAngles.x);
             }
             else if (bone.Key == "Lower leg.L")
             {
-                jointOrientation = Quaternion.Euler(0, 0, 0) * jointOrientation;
+                jointOrientation = Quaternion.Inverse(Quaternion.Euler(-parentRotation.eulerAngles.z, parentRotation.eulerAngles.y + 90, -parentRotation.eulerAngles.x)) * Quaternion.Euler(-jointOrientation.eulerAngles.z + 20, jointOrientation.eulerAngles.y + 90, -jointOrientation.eulerAngles.x);
             }
             var current = Skeleton.BoneIdBoneDictionary[bone.Key].LocalRotation;
-            Skeleton.BoneIdBoneDictionary[bone.Key].LocalRotation = Quaternion.Lerp(current, Quaternion.Inverse(parentRotation) * jointOrientation, 0.4f);
+            Skeleton.BoneIdBoneDictionary[bone.Key].LocalRotation = Quaternion.Lerp(current, (bone.Key.Contains("Lower leg") ? Quaternion.identity : Quaternion.Inverse(parentRotation)) * jointOrientation, 0.5f);
         }
     }
 
@@ -251,12 +252,12 @@ public class AnimationController : MonoBehaviour
         _knucklesToKinect.Add("Hand.L", JointType.HandRight);
 
         //Left leg
-        //_knucklesToKinect.Add("Upper leg.R", JointType.KneeLeft);
-        //_knucklesToKinect.Add("Lower leg.R", JointType.AnkleLeft);
+        _knucklesToKinect.Add("Upper leg.R", JointType.KneeLeft);
+        _knucklesToKinect.Add("Lower leg.R", JointType.AnkleLeft);
 
         //Right leg
         _knucklesToKinect.Add("Upper leg.L", JointType.KneeRight);
-        //_knucklesToKinect.Add("Lower leg.L", JointType.AnkleRight);
+        _knucklesToKinect.Add("Lower leg.L", JointType.AnkleRight);
     }
 
     void OnDrawGizmos()
