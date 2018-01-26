@@ -36,13 +36,18 @@ public class AnimationController : MonoBehaviour
         var basePoseVertices = new Vector3[ReferenceMesh.sharedMesh.vertices.Length];
         var basePoseNormals = new Vector3[ReferenceMesh.sharedMesh.normals.Length];
         var nameBoneDictionary = new Dictionary<string, BaseBone>();
+        BaseBone[] boneArray = new BaseBone[0];
         var vertexIdBoneWeightDictionary = new Dictionary<int, Dictionary<string, float>>();
+        int[] boneIndexArray = new int[0];
+        float[] boneWeightArray = new float[0];
 
         //Load vertices and normals for basePose
         Array.Copy(ReferenceMesh.sharedMesh.vertices, basePoseVertices, basePoseVertices.Length);
         Array.Copy(ReferenceMesh.sharedMesh.normals, basePoseNormals, basePoseNormals.Length);
 
         //bones could for example be pulled from a SkinnedMeshRenderer
+        boneArray = new BaseBone[ReferenceMesh.bones.Length];
+
         for (var i = 0; i < ReferenceMesh.bones.Length; i++)
         {
             var localPosition = ReferenceMesh.sharedMesh.bindposes[i].inverse.GetColumn(3);
@@ -50,8 +55,9 @@ public class AnimationController : MonoBehaviour
 
             if (i == 0)
             {
+                boneArray[i] = new RootBone(localPosition, localRotation);
                 ReferenceMesh.rootBone.name = "root";
-                nameBoneDictionary.Add(ReferenceMesh.rootBone.name, new RootBone(localPosition, localRotation));
+                nameBoneDictionary.Add(ReferenceMesh.rootBone.name, boneArray[i]);
             }
             else
             {
@@ -65,12 +71,15 @@ public class AnimationController : MonoBehaviour
                 }
                 localRotation = (ReferenceMesh.sharedMesh.bindposes[parentIndex] * ReferenceMesh.sharedMesh.bindposes[i].inverse).rotation;
                 localPosition = (ReferenceMesh.sharedMesh.bindposes[parentIndex] * ReferenceMesh.sharedMesh.bindposes[i].inverse).GetColumn(3);
-                nameBoneDictionary.Add(ReferenceMesh.bones[i].name, new Bone(localPosition, localRotation, ReferenceMesh.bones[i].parent.name));
+                boneArray[i] = new Bone(localPosition, localRotation, ReferenceMesh.bones[i].parent.name);
+                nameBoneDictionary.Add(ReferenceMesh.bones[i].name, boneArray[i]);
             }
         }
 
         //Unity BoneWeight class can assign up to four bones to each vertex, acessable via bone inicies
         var boneWeights = ReferenceMesh.sharedMesh.boneWeights;
+        boneWeightArray = new float[basePoseVertices.Length * 4];
+        boneIndexArray = new int[basePoseVertices.Length * 4];
         for (var i = 0; i < basePoseVertices.Length; i++)
         {
             Dictionary<string, float> dic = new Dictionary<string, float>();
@@ -78,6 +87,15 @@ public class AnimationController : MonoBehaviour
             var name1 = ReferenceMesh.bones[boneWeights[i].boneIndex1].name;
             var name2 = ReferenceMesh.bones[boneWeights[i].boneIndex2].name;
             var name3 = ReferenceMesh.bones[boneWeights[i].boneIndex3].name;
+
+            boneWeightArray[4 * i] = boneWeights[i].weight0;
+            boneWeightArray[4 * i +1] = boneWeights[i].weight1;
+            boneWeightArray[4 * i +2] = boneWeights[i].weight2;
+            boneWeightArray[4 * i+3] = boneWeights[i].weight3;
+            boneIndexArray[4 * i] = boneWeights[i].boneIndex0;
+            boneIndexArray[4 * i + 1] = boneWeights[i].boneIndex1;
+            boneIndexArray[4 * i + 2] = boneWeights[i].boneIndex2;
+            boneIndexArray[4 * i + 3] = boneWeights[i].boneIndex3;
 
             dic.Add(name0, boneWeights[i].weight0);
             if (!dic.ContainsKey(name1))
@@ -90,7 +108,7 @@ public class AnimationController : MonoBehaviour
         }
 
         //Create a skeleton
-        Skeleton = new Skeleton(nameBoneDictionary, vertexIdBoneWeightDictionary, basePoseVertices, basePoseNormals);
+        Skeleton = new Skeleton(nameBoneDictionary, vertexIdBoneWeightDictionary, basePoseVertices, basePoseNormals, boneArray, boneIndexArray, boneWeightArray);
     }
 
     //Update skeleton using kinect sensor data

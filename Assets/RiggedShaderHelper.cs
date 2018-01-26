@@ -17,14 +17,14 @@ public class RiggedShaderHelper : MonoBehaviour
     {
         boneweights = new ComputeBuffer(weights.Length, sizeof(float));
         boneIDs = new ComputeBuffer(IDs.Length, sizeof(uint));
-        boneMatrices = new ComputeBuffer(matices.Length, sizeof(Matrix4x4));
+       // boneMatrices = new ComputeBuffer(matices.Length, sizeof(Matrix4x4));
 
         boneweights.SetData(weights);
         boneIDs.SetData(IDs);
-        boneMatrices.SetData(matices);
+       // boneMatrices.SetData(matices);
 
         material.SetBuffer("_weights", boneweights);
         material.SetBuffer("_IDs", boneIDs);
-        material.SetBuffer("_Matices", boneMatrices);
+        //material.SetBuffer("_Matices", boneMatrices);
     }
 }

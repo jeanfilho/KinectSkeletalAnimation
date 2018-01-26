@@ -7,12 +7,15 @@ public class Skeleton
 {
     public readonly Dictionary<string, BaseBone> BoneIdBoneDictionary;
     public readonly Dictionary<int, Dictionary<string, float>> VertexIdBoneWeightDictionary;
+    BaseBone[] BoneArray = new BaseBone[0];
+    int[] BoneIndexArray = new int[0];
+    float[] BoneWeightArray = new float[0];
 
     public readonly Vector3[] BasePoseVertices;
     public readonly Vector3[] BasePoseNormals;
 
     //Root bone should have ID == "root"
-    public Skeleton(Dictionary<string, BaseBone> boneIdBoneDictionary, Dictionary<int, Dictionary<string, float>> vertexIdBoneWeightDictionary, Vector3[] basePoseVertices, Vector3[] basePoseNormals)
+    public Skeleton(Dictionary<string, BaseBone> boneIdBoneDictionary, Dictionary<int, Dictionary<string, float>> vertexIdBoneWeightDictionary, Vector3[] basePoseVertices, Vector3[] basePoseNormals, BaseBone[] boneArray, int[] boneIndexArray, float[] boneWeightArray)
     {
         //Check if weights are normalized
         foreach (var vertexIdBoneWeight in vertexIdBoneWeightDictionary)
@@ -33,6 +36,9 @@ public class Skeleton
         VertexIdBoneWeightDictionary = vertexIdBoneWeightDictionary;
         BasePoseVertices = basePoseVertices;
         BasePoseNormals = basePoseNormals;
+        BoneArray = boneArray;
+        BoneIndexArray = boneIndexArray;
+        BoneWeightArray = boneWeightArray;
 
         //Calculate base pose matrices
         foreach (var bone in BoneIdBoneDictionary)
@@ -53,11 +59,12 @@ public class Skeleton
         //Get the current pose position and normal for every vertex
         for (int i = 0; i < vertices.Length; i++)
         {
-            var finalPosition = Vector4.zero;
-            var finalNormal = Vector4.zero;
+            var finalPosition = Vector3.zero;
+            var finalNormal = Vector3.zero;
             var weightSum = 0f;
 
             //Sum over all bone influences
+            /*
             foreach (var boneWeight in VertexIdBoneWeightDictionary[i])
             {
                 //Value too small to be considered - skip this bone
@@ -78,6 +85,29 @@ public class Skeleton
                 finalNormal += updatedNormal;
                 weightSum += boneWeight.Value;
             }
+            */
+            for(int j = 0; j<4; j++)
+            {
+                //Value too small to be considered - skip this bone
+                if (Math.Abs(BoneWeightArray[4*i+j]) < 0.000001f)
+                    continue;
+
+                var currentBone = BoneArray[BoneIndexArray[4 * i + j]];
+                //var basePoseMatrix = currentBone.GetInverseBasePoseTransformation();
+                //var currentPoseMatrix = currentBone.GetCurrentPoseTransformation();
+                //var currentPoseBasePose = currentBone.getCurrentPoseBasePose();
+
+                //var currentPosition = new Vector4(BasePoseVertices[i].x, BasePoseVertices[i].y, BasePoseVertices[i].z, 1.0f);
+                var updatedPosition = (currentBone.CurrentPoseBasePoseTransformation.MultiplyPoint3x4(BasePoseVertices[i])) * BoneWeightArray[4 * i + j];
+
+                //var currentNormal = new Vector4(BasePoseNormals[i].x, BasePoseNormals[i].y, BasePoseNormals[i].z, 0f);
+                var updatedNormal = (currentBone.CurrentPoseBasePoseTransformation.MultiplyVector(BasePoseVertices[i])) * BoneWeightArray[4 * i + j];
+
+                finalPosition += updatedPosition;
+                finalNormal += updatedNormal;
+                weightSum += BoneWeightArray[4 * i + j];
+            }
+
             //Normalize bone influences
             var normalizationFactor = 1f / weightSum;
             vertices[i] = finalPosition * normalizationFactor;
@@ -95,10 +125,13 @@ public abstract class BaseBone
     protected readonly Vector3 BaseLocalLinkPosition;
     protected readonly Quaternion BaseLocalRotation;
 
-    protected Matrix4x4 BasePoseTransformation = Matrix4x4.identity;
-    protected Matrix4x4 CurrentPoseTransformation = Matrix4x4.identity;
+    //thank you call by reference
+    public Matrix4x4 BasePoseTransformation = Matrix4x4.identity;
+    public Matrix4x4 InverseBasePoseTransformation = Matrix4x4.identity;
+    public Matrix4x4 CurrentPoseTransformation = Matrix4x4.identity;
+    public Matrix4x4 CurrentPoseBasePoseTransformation = Matrix4x4.identity;
 
-    protected BaseBone(Vector3 localLinkPosition, Quaternion localRotation)
+    protected BaseBone(Vector3 localLinkPosition,Quaternion localRotation) 
     {
         LocalLinkPosition = localLinkPosition;
         BaseLocalLinkPosition = localLinkPosition;
@@ -112,10 +145,17 @@ public abstract class BaseBone
     {
         return BasePoseTransformation;
     }
-
+    public Matrix4x4 GetInverseBasePoseTransformation()
+    {
+        return InverseBasePoseTransformation;
+    }
     public Matrix4x4 GetCurrentPoseTransformation()
     {
         return CurrentPoseTransformation;
+    }
+    public Matrix4x4 getCurrentPoseBasePose()
+    {
+        return CurrentPoseBasePoseTransformation;
     }
     public abstract void UpdateBasePoseTransformation(Skeleton skeleton);
     public abstract void UpdateCurrentPoseTransformation(Skeleton skeleton);
@@ -128,11 +168,14 @@ public class RootBone : BaseBone
     public override void UpdateBasePoseTransformation(Skeleton skeleton)
     {
         BasePoseTransformation = Matrix4x4.Translate(BaseLocalLinkPosition) * Matrix4x4.Rotate(BaseLocalRotation);
+        InverseBasePoseTransformation = BasePoseTransformation.inverse;
+        CurrentPoseBasePoseTransformation = CurrentPoseTransformation * InverseBasePoseTransformation;
     }
 
     public override void UpdateCurrentPoseTransformation(Skeleton skeleton)
     {
         CurrentPoseTransformation = Matrix4x4.Translate(LocalLinkPosition) * Matrix4x4.Rotate(LocalRotation);
+        CurrentPoseBasePoseTransformation = CurrentPoseTransformation * InverseBasePoseTransformation;
     }
 }
 
@@ -153,6 +196,8 @@ public class Bone : BaseBone
 
         previousBone.UpdateBasePoseTransformation(skeleton);
         BasePoseTransformation = previousBone.GetBasePoseTransformation() * Matrix4x4.Translate(BaseLocalLinkPosition) * Matrix4x4.Rotate(BaseLocalRotation);
+        InverseBasePoseTransformation = BasePoseTransformation.inverse;
+        CurrentPoseBasePoseTransformation = CurrentPoseTransformation * InverseBasePoseTransformation;
     }
 
     public override void UpdateCurrentPoseTransformation(Skeleton skeleton)
@@ -163,5 +208,6 @@ public class Bone : BaseBone
 
         previousBone.UpdateCurrentPoseTransformation(skeleton);
         CurrentPoseTransformation = previousBone.GetCurrentPoseTransformation() * Matrix4x4.Translate(LocalLinkPosition) * Matrix4x4.Rotate(LocalRotation);
+        CurrentPoseBasePoseTransformation = CurrentPoseTransformation * InverseBasePoseTransformation;
     }
 }
