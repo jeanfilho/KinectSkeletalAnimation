@@ -64,28 +64,6 @@ public class Skeleton
             var weightSum = 0f;
 
             //Sum over all bone influences
-            /*
-            foreach (var boneWeight in VertexIdBoneWeightDictionary[i])
-            {
-                //Value too small to be considered - skip this bone
-                if(Math.Abs(boneWeight.Value) < 0.000001f)
-                    continue;
-
-                var currentBone = BoneIdBoneDictionary[boneWeight.Key];
-                var basePoseMatrix = currentBone.GetBasePoseTransformation().inverse;
-                var currentPoseMatrix = currentBone.GetCurrentPoseTransformation();
-
-                var currentPosition = new Vector4(BasePoseVertices[i].x, BasePoseVertices[i].y, BasePoseVertices[i].z, 1.0f);
-                var updatedPosition = (currentPoseMatrix * basePoseMatrix * currentPosition) * boneWeight.Value;
-                
-                var currentNormal = new Vector4(BasePoseNormals[i].x, BasePoseNormals[i].y, BasePoseNormals[i].z, 0f);
-                var updatedNormal = (currentPoseMatrix * basePoseMatrix * currentNormal) * boneWeight.Value;
-
-                finalPosition += updatedPosition;
-                finalNormal += updatedNormal;
-                weightSum += boneWeight.Value;
-            }
-            */
             for(int j = 0; j<4; j++)
             {
                 //Value too small to be considered - skip this bone
@@ -93,14 +71,7 @@ public class Skeleton
                     continue;
 
                 var currentBone = BoneArray[BoneIndexArray[4 * i + j]];
-                //var basePoseMatrix = currentBone.GetInverseBasePoseTransformation();
-                //var currentPoseMatrix = currentBone.GetCurrentPoseTransformation();
-                //var currentPoseBasePose = currentBone.getCurrentPoseBasePose();
-
-                //var currentPosition = new Vector4(BasePoseVertices[i].x, BasePoseVertices[i].y, BasePoseVertices[i].z, 1.0f);
                 var updatedPosition = (currentBone.CurrentPoseBasePoseTransformation.MultiplyPoint3x4(BasePoseVertices[i])) * BoneWeightArray[4 * i + j];
-
-                //var currentNormal = new Vector4(BasePoseNormals[i].x, BasePoseNormals[i].y, BasePoseNormals[i].z, 0f);
                 var updatedNormal = (currentBone.CurrentPoseBasePoseTransformation.MultiplyVector(BasePoseVertices[i])) * BoneWeightArray[4 * i + j];
 
                 finalPosition += updatedPosition;

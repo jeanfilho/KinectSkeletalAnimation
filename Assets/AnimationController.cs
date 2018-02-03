@@ -104,15 +104,6 @@ public class AnimationController : MonoBehaviour
             var name2 = ReferenceMesh.bones[boneWeights[i].boneIndex2].name;
             var name3 = ReferenceMesh.bones[boneWeights[i].boneIndex3].name;
 
-            boneWeightArray[4 * i] = boneWeights[i].weight0;
-            boneWeightArray[4 * i +1] = boneWeights[i].weight1;
-            boneWeightArray[4 * i +2] = boneWeights[i].weight2;
-            boneWeightArray[4 * i+3] = boneWeights[i].weight3;
-            boneIndexArray[4 * i] = boneWeights[i].boneIndex0;
-            boneIndexArray[4 * i + 1] = boneWeights[i].boneIndex1;
-            boneIndexArray[4 * i + 2] = boneWeights[i].boneIndex2;
-            boneIndexArray[4 * i + 3] = boneWeights[i].boneIndex3;
-
             dic.Add(name0, boneWeights[i].weight0);
             if (!dic.ContainsKey(name1))
                 dic.Add(name1, boneWeights[i].weight1);
@@ -121,12 +112,21 @@ public class AnimationController : MonoBehaviour
             if (!dic.ContainsKey(name3))
                 dic.Add(name3, boneWeights[i].weight3);
             vertexIdBoneWeightDictionary.Add(i, dic);
+
+            boneWeightArray[4 * i] = boneWeights[i].weight0;
+            boneWeightArray[4 * i + 1] = boneWeights[i].weight1;
+            boneWeightArray[4 * i + 2] = boneWeights[i].weight2;
+            boneWeightArray[4 * i + 3] = boneWeights[i].weight3;
+            boneIndexArray[4 * i] = boneWeights[i].boneIndex0;
+            boneIndexArray[4 * i + 1] = boneWeights[i].boneIndex1;
+            boneIndexArray[4 * i + 2] = boneWeights[i].boneIndex2;
+            boneIndexArray[4 * i + 3] = boneWeights[i].boneIndex3;
         }
 
         //Create a skeleton
         Skeleton = new Skeleton(nameBoneDictionary, vertexIdBoneWeightDictionary, basePoseVertices, basePoseNormals, boneArray, boneIndexArray, boneWeightArray);
 
-        //Deactivate class
+        //Deactivate template
         ReferenceMesh.gameObject.SetActive(false);
     }
 

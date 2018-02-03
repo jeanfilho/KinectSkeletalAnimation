@@ -258,7 +258,7 @@ GameObject:
   m_Component:
   - component: {fileID: 120734820}
   m_Layer: 0
-  m_Name: ShowUsDaWae
+  m_Name: Target
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -319,7 +319,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 100018, guid: adfa0f57a56efa946ae238b874f32c06, type: 3}
       propertyPath: m_Name
-      value: DaWae
+      value: Template Mesh
       objectReference: {fileID: 0}
     - target: {fileID: 400086, guid: adfa0f57a56efa946ae238b874f32c06, type: 3}
       propertyPath: m_LocalRotation.x
